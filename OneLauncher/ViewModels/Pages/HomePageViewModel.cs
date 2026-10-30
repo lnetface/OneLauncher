@@ -179,6 +179,7 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
     private Bitmap? homeBackground;
 
     private string? _loadedBackgroundPath;
+    private int _loadedBackgroundVersion = -1;
 
     public bool IsClassicStyle => !IsMagicButtonStyle;
     // 默认样式保持原有的完整主页，板块开关只作用于魔法按钮样式。
@@ -225,12 +226,15 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
 
     private void LoadHomeBackground(string? path)
     {
+        var version = HomeBackgroundStore.Version;
         if (string.Equals(path, _loadedBackgroundPath, StringComparison.OrdinalIgnoreCase) &&
+            version == _loadedBackgroundVersion &&
             (path == null || HomeBackground != null))
             return;
 
         var previous = HomeBackground;
         _loadedBackgroundPath = path;
+        _loadedBackgroundVersion = version;
         HomeBackground = null;
         previous?.Dispose();
         if (string.IsNullOrWhiteSpace(path))
@@ -238,7 +242,7 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
 
         try
         {
-            var bitmap = new Bitmap(path);
+            var bitmap = HomeBackgroundStore.LoadBitmap(path);
             // 超大壁纸缩小后保存，避免长期占用过多内存；普通图片保持原尺寸。
             if (bitmap.PixelSize.Width > 2560)
             {

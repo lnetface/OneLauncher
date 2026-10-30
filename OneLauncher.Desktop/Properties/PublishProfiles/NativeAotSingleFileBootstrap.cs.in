@@ -1,71 +1,75 @@
 using System;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media.Imaging;
 
 namespace OneLauncher.Desktop;
 
 internal static class NativeAotSingleFileBootstrap
 {
-    private const string ResourcePrefix = "OneLauncher.Native.win-x64";
-    private const string BundleVersion = "angle-2.1.25547.20250602_skia-2.88.9_harfbuzz-8.3.1.1_msal-0.20.6";
-
-    private static readonly string[] NativeLibraries =
-    [
-        "av_libglesv2.dll",
-        "libHarfBuzzSharp.dll",
-        "libSkiaSharp.dll",
-        "msalruntime.dll"
-    ];
-
     [STAThread]
     public static void Main(string[] args)
     {
-        string nativeDirectory = ExtractNativeLibraries();
-
-        foreach (string fileName in NativeLibraries)
-            NativeLibrary.Load(Path.Combine(nativeDirectory, fileName));
-
+        // Graphics libraries are linked statically; Microsoft's WAM broker is
+        // distributed only as a DLL, so embed and preload this remaining library.
+        NativeLibrary.Load(ExtractBroker());
+        if (args.Length == 1 && args[0] == "--verify-native-runtime")
+        {
+            // Offline deployment check: initialize graphics without launcher
+            // services, account data, downloads or the desktop lifetime.
+            Program.BuildAvaloniaApp().SetupWithoutStarting();
+            var text = new TextBlock { Text = "One Launcher 启动检查", Width = 240, Height = 40 };
+            text.Measure(new Size(240, 40));
+            text.Arrange(new Rect(0, 0, 240, 40));
+            using var bitmap = new RenderTargetBitmap(new PixelSize(240, 40));
+            bitmap.Render(text);
+            return;
+        }
         Program.Main(args);
     }
 
-    private static string ExtractNativeLibraries()
+    private static string ExtractBroker()
     {
-        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        const string fileName = "msalruntime.dll";
+        using Stream resource = typeof(NativeAotSingleFileBootstrap).Assembly
+            .GetManifestResourceStream("OneLauncher.Native.msalruntime.dll")
+            ?? throw new InvalidOperationException("Missing embedded MSAL native broker.");
+        string contentHash = Convert.ToHexString(SHA256.HashData(resource));
+        resource.Position = 0;
+        string localAppData = Environment.GetEnvironmentVariable("ONELAUNCHER_NATIVE_CACHE_ROOT")
+            ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         if (string.IsNullOrWhiteSpace(localAppData))
             localAppData = Path.GetTempPath();
 
-        string nativeDirectory = Path.Combine(localAppData, "OneLauncher", "native", "win-x64", BundleVersion);
+        string nativeDirectory = Path.Combine(localAppData, "OneLauncher", "native", "win-x64", contentHash);
         Directory.CreateDirectory(nativeDirectory);
 
-        Assembly assembly = typeof(NativeAotSingleFileBootstrap).Assembly;
-        foreach (string fileName in NativeLibraries)
+        string destination = Path.Combine(nativeDirectory, fileName);
+        if (File.Exists(destination))
         {
-            string resourceName = $"{ResourcePrefix}.{fileName}";
-            using Stream resource = assembly.GetManifestResourceStream(resourceName)
-                ?? throw new InvalidOperationException($"Missing embedded native library: {resourceName}");
-
-            string destination = Path.Combine(nativeDirectory, fileName);
-            if (File.Exists(destination) && new FileInfo(destination).Length == resource.Length)
-                continue;
-
-            string temporary = $"{destination}.{Environment.ProcessId}.tmp";
-            try
-            {
-                using (FileStream output = new(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    resource.CopyTo(output);
-                    output.Flush(flushToDisk: true);
-                }
-
-                File.Move(temporary, destination, overwrite: true);
-            }
-            finally
-            {
-                File.Delete(temporary);
-            }
+            using var existing = File.OpenRead(destination);
+            if (Convert.ToHexString(SHA256.HashData(existing)) == contentHash)
+                return destination;
         }
 
-        return nativeDirectory;
+        string temporary = $"{destination}.{Environment.ProcessId}.{Guid.NewGuid():N}.tmp";
+        try
+        {
+            using (FileStream output = new(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                resource.CopyTo(output);
+                output.Flush(flushToDisk: true);
+            }
+
+            File.Move(temporary, destination, overwrite: true);
+        }
+        finally
+        {
+            File.Delete(temporary);
+        }
+        return destination;
     }
 }

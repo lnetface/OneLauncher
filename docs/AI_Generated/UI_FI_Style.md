@@ -187,6 +187,8 @@ Home 新闻翻页引用 `VectorIcons.ChevronLeft/ChevronRight`，TaskCenterPane 
 
 新增图形时在 resx 增加字符串键，在 VectorIcons 增加解析后的 Geometry 属性，视图或 ViewModel 引用该属性。不要在界面文件中复制原始路径，也不要手改 obj 下自动生成的 SKGT.Designer.cs。资源配置、应用点与验证详见 [SKGT 矢量文本资源迁移](SKGT矢量文本资源迁移-20261023.md)。
 
+`ThemeIcon` 通过 `JavaLogo` 和 `MicrosoftLogo` 使用 SKGT 中的 Java 与 Microsoft 图形；其他通用图标仍使用 Theme 中的 Icons8 Apple SF Regular 位图。
+
 ## 4. Typography.axaml：5 条文字样式
 
 | 编号 | 选择器 | Setter 与设计作用 | 实际应用点 |

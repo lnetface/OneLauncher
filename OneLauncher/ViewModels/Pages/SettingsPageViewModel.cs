@@ -279,7 +279,6 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
     private string selectedHomePageStyle = "默认";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HomeBackgroundDisplayName))]
     [NotifyPropertyChangedFor(nameof(HasHomeBackground))]
     private string? currentHomeBackgroundPath;
 
@@ -308,7 +307,6 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
 
     public bool IsMagicHomeOptionsVisible => SelectedHomePageStyle == "魔法按钮";
     public bool HasHomeBackground => CurrentHomeBackgroundPath != null;
-    public string HomeBackgroundDisplayName => HasHomeBackground ? Path.GetFileName(CurrentHomeBackgroundPath)! : "未设置背景";
 
     partial void OnSelectedHomePageStyleChanged(string value)
     {

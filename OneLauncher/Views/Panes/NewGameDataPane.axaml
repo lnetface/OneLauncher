@@ -43,7 +43,16 @@
                                   IsEnabled="{Binding SelectedBaseVersion, Converter={x:Static ObjectConverters.IsNotNull}}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="lo:ModEnum">
-                                    <TextBlock Text="{Binding Converter={StaticResource ModEnumConverter}}"/>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <controls:ThemeIcon Width="22" Height="22" VerticalAlignment="Center"
+                                                            IconKey="{Binding Converter={StaticResource UiOptionConverter}, ConverterParameter=Icon}"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Converter={StaticResource UiOptionConverter}}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Converter={StaticResource UiOptionConverter}, ConverterParameter=Description}"
+                                                       FontSize="11" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource SecondaryForegroundBrush}"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
@@ -53,7 +62,16 @@
                                   IsEnabled="{Binding SelectedBaseVersion, Converter={x:Static ObjectConverters.IsNotNull}}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="lo:UserModel">
-                                    <TextBlock Text="{Binding Name}"/>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <controls:ThemeIcon Width="20" Height="20" VerticalAlignment="Center"
+                                                            IconKey="{Binding UserType, Converter={StaticResource UiOptionConverter}, ConverterParameter=Icon}"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding UserType, Converter={StaticResource UiOptionConverter}}"
+                                                       FontSize="11" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource SecondaryForegroundBrush}"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>

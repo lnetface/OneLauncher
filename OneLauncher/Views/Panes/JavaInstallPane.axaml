@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:OneLauncher.Views.Panes.PaneViewModels"
              xmlns:controls="using:OneLauncher.Views.Controls"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DesignWidth="650" d:DesignHeight="620"
              x:DataType="vm:JavaInstallPaneViewModel"
@@ -23,14 +24,32 @@
                         <ComboBox Grid.Row="1" Grid.Column="0" Classes="pane-field"
                                   ItemsSource="{Binding JavaVersions}"
                                   SelectedItem="{Binding SelectedJavaVersion}"
-                                  IsEnabled="{Binding !IsInstalling}"/>
+                                  IsEnabled="{Binding !IsInstalling}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="sys:Int32">
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <controls:ThemeIcon IconKey="JavaLogo" Width="20" Height="20" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Converter={StaticResource UiOptionConverter}}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Converter={StaticResource UiOptionConverter}, ConverterParameter=Description}"
+                                                       FontSize="11" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource SecondaryForegroundBrush}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <ComboBox Grid.Row="1" Grid.Column="1" Classes="pane-field"
                                   ItemsSource="{Binding JavaProviders}"
                                   SelectedItem="{Binding SelectedJavaProvider}"
                                   IsEnabled="{Binding !IsInstalling}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:JavaProviderItem">
-                                    <TextBlock Text="{Binding DisplayName}"/>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Description}" FontSize="11" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"/>
+                                    </StackPanel>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>

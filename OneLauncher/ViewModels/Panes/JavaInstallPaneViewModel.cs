@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace OneLauncher.Views.Panes.PaneViewModels;
 
-internal sealed record JavaProviderItem(JavaProvider Provider, string DisplayName, int MinimumVersion = 0);
+internal sealed record JavaProviderItem(JavaProvider Provider, string DisplayName, string Description, int MinimumVersion = 0);
 
 internal partial class JavaInstallPaneViewModel : BaseViewModel, IPaneHost
 {
@@ -23,11 +23,11 @@ internal partial class JavaInstallPaneViewModel : BaseViewModel, IPaneHost
     private CancellationTokenSource? _cts;
     private static readonly JavaProviderItem[] AllJavaProviders =
     [
-        new(JavaProvider.Adoptium, "Eclipse Adoptium"),
-        new(JavaProvider.AzulZulu, "Azul Zulu"),
-        new(JavaProvider.MicrosoftOpenJDK, "Microsoft OpenJDK", 11),
-        new(JavaProvider.OracleGraalVM, "Oracle GraalVM", 21),
-        new(JavaProvider.OracleJDK, "Oracle JDK")
+        new(JavaProvider.Adoptium, "Eclipse Adoptium", "Temurin 通用构建"),
+        new(JavaProvider.AzulZulu, "Azul Zulu", "覆盖版本较全"),
+        new(JavaProvider.MicrosoftOpenJDK, "Microsoft OpenJDK", "Java 11 及以上", 11),
+        new(JavaProvider.OracleGraalVM, "Oracle GraalVM", "Java 21 及以上", 21),
+        new(JavaProvider.OracleJDK, "Oracle JDK", "Oracle 官方构建")
     ];
 
     public JavaInstallPaneViewModel(JavaManager javaManager,UnitedCore unitedCore, Action onCloseCallback)

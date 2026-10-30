@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:OneLauncher.Views.Panes.PaneViewModels"
              xmlns:controls="using:OneLauncher.Views.Controls"
+             xmlns:models="clr-namespace:OneLauncher.Core.Helper.Models;assembly=OneLauncher.Core"
              mc:Ignorable="d" d:DesignWidth="650" d:DesignHeight="620"
              x:DataType="vm:UserModelLoginPaneViewModel"
              x:CompileBindings="True"
@@ -15,10 +16,22 @@
         <ScrollViewer Grid.Row="2">
             <StackPanel MaxWidth="520" HorizontalAlignment="Stretch" Spacing="16">
                 <TextBlock Classes="pane-section-title" Text="登录方式"/>
-                <ComboBox Classes="pane-field" SelectedItem="{Binding WhiceLoginType}" PlaceholderText="选择登录类型">
-                    <ComboBoxItem Content="离线账户"/>
-                    <ComboBoxItem Content="微软账户"/>
-                    <ComboBoxItem Content="外置登入"/>
+                <ComboBox Classes="pane-field" ItemsSource="{Binding LoginTypes}"
+                          SelectedItem="{Binding SelectedLoginType}" PlaceholderText="选择登录类型">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:AccountType">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                <controls:ThemeIcon Width="20" Height="20" VerticalAlignment="Center"
+                                                    IconKey="{Binding Converter={StaticResource UiOptionConverter}, ConverterParameter=Icon}"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Converter={StaticResource UiOptionConverter}}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Converter={StaticResource UiOptionConverter}, ConverterParameter=Description}"
+                                               FontSize="11" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource SecondaryForegroundBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
                 </ComboBox>
 
                 <Border Classes="pane-surface" IsVisible="{Binding IsYaLogin}">

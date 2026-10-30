@@ -1,0 +1,32 @@
+<Project>
+  <PropertyGroup Condition="'$(OneLauncherNativeSingleFile)' == 'true'">
+    <StartupObject>OneLauncher.Desktop.NativeAotSingleFileBootstrap</StartupObject>
+  </PropertyGroup>
+  <Target Name="EmbedOneLauncherBroker" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolvePackageAssets"
+          Condition="'$(OneLauncherNativeSingleFile)' == 'true'">
+    <Error Condition="'$(PublishAot)' != 'true' or '$(RuntimeIdentifier)' != 'win-x64'"
+           Text="OneLauncherNativeSingleFile currently requires NativeAOT and win-x64. Use the WindowsAot profile." />
+    <ItemGroup>
+      <_OneLauncherBroker Include="@(NativeCopyLocalItems)" Condition="'%(Filename)%(Extension)' == 'msalruntime.dll'" />
+      <EmbeddedResource Include="@(_OneLauncherBroker)" LogicalName="OneLauncher.Native.msalruntime.dll" />
+      <Compile Include="$(MSBuildThisFileDirectory)../OneLauncher.Desktop/Properties/PublishProfiles/NativeAotSingleFileBootstrap.cs.in"
+               Link="NativeAotSingleFileBootstrap.cs" />
+    </ItemGroup>
+    <Error Condition="'@(_OneLauncherBroker)' == ''" Text="MSAL native broker was not restored for win-x64." />
+  </Target>
+  <Target Name="RemoveEmbeddedOneLauncherBroker" AfterTargets="ComputeFilesToPublish"
+          Condition="'$(OneLauncherNativeSingleFile)' == 'true'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(Filename)%(Extension)' == 'msalruntime.dll' or '%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
+  <Target Name="VerifyOneLauncherSingleFile" AfterTargets="StaticLinkAvaloniaCleanDynamicAssets"
+          Condition="'$(OneLauncherNativeSingleFile)' == 'true'">
+    <ItemGroup>
+      <_OneLauncherUnexpectedPublishFile Include="$(PublishDir)**/*" Exclude="$(PublishDir)$(AssemblyName).exe" />
+    </ItemGroup>
+    <Error Condition="'@(_OneLauncherUnexpectedPublishFile)' != ''"
+           Text="Single-file publish contains extra files: @(_OneLauncherUnexpectedPublishFile). Use a clean publish directory." />
+  </Target>
+</Project>

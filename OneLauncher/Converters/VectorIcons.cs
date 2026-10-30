@@ -14,4 +14,6 @@ public static class VectorIcons
     public static Geometry TaskRunning { get; } = Geometry.Parse(SKGT.TaskRunning);
     public static Geometry TaskStopped { get; } = Geometry.Parse(SKGT.TaskStopped);
     public static Geometry TaskCompleted { get; } = Geometry.Parse(SKGT.TaskCompleted);
+    public static Geometry JavaLogo { get; } = Geometry.Parse(SKGT.JavaLogo);
+    public static Geometry MicrosoftLogo { get; } = Geometry.Parse(SKGT.MicrosoftLogo);
 }

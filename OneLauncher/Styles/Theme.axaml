@@ -17,6 +17,9 @@
             <Bitmap x:Key="IconAdd">avares://OneLauncher/Assets/icos/add.png</Bitmap>
             <Bitmap x:Key="IconBack">avares://OneLauncher/Assets/icos/back.png</Bitmap>
             <Bitmap x:Key="IconBrowser">avares://OneLauncher/Assets/icos/browser.png</Bitmap>
+            <Bitmap x:Key="IconCloud">avares://OneLauncher/Assets/icos/cloud.png</Bitmap>
+            <Bitmap x:Key="IconCloudDownload">avares://OneLauncher/Assets/icos/cloudDownload.png</Bitmap>
+            <Bitmap x:Key="IconDashboard">avares://OneLauncher/Assets/icos/dashboard.png</Bitmap>
             <Bitmap x:Key="IconDel">avares://OneLauncher/Assets/icos/del.png</Bitmap>
             <Bitmap x:Key="IconDownload">avares://OneLauncher/Assets/icos/download.png</Bitmap>
             <Bitmap x:Key="IconDownloadnow">avares://OneLauncher/Assets/icos/downloadnow.png</Bitmap>
@@ -24,15 +27,24 @@
             <Bitmap x:Key="IconError">avares://OneLauncher/Assets/icos/error.png</Bitmap>
             <Bitmap x:Key="IconGame">avares://OneLauncher/Assets/icos/game.png</Bitmap>
             <Bitmap x:Key="IconHome">avares://OneLauncher/Assets/icos/home.png</Bitmap>
+            <Bitmap x:Key="IconImageAdd">avares://OneLauncher/Assets/icos/imageAdd.png</Bitmap>
+            <Bitmap x:Key="IconImageRemove">avares://OneLauncher/Assets/icos/imageRemove.png</Bitmap>
             <Bitmap x:Key="IconInternet">avares://OneLauncher/Assets/icos/internet.png</Bitmap>
+            <Bitmap x:Key="IconKey">avares://OneLauncher/Assets/icos/key.png</Bitmap>
             <Bitmap x:Key="IconLaunch">avares://OneLauncher/Assets/icos/launch.png</Bitmap>
+            <Bitmap x:Key="IconLightning">avares://OneLauncher/Assets/icos/lightning.png</Bitmap>
+            <Bitmap x:Key="IconMagic">avares://OneLauncher/Assets/icos/magic.png</Bitmap>
+            <Bitmap x:Key="IconMemory">avares://OneLauncher/Assets/icos/memory.png</Bitmap>
             <Bitmap x:Key="IconPin">avares://OneLauncher/Assets/icos/pin.png</Bitmap>
             <Bitmap x:Key="IconRefresh">avares://OneLauncher/Assets/icos/refresh.png</Bitmap>
             <Bitmap x:Key="IconSave">avares://OneLauncher/Assets/icos/save.png</Bitmap>
             <Bitmap x:Key="IconSearch">avares://OneLauncher/Assets/icos/search.png</Bitmap>
             <Bitmap x:Key="IconServer">avares://OneLauncher/Assets/icos/server.png</Bitmap>
             <Bitmap x:Key="IconSettings1">avares://OneLauncher/Assets/icos/settings1.png</Bitmap>
+            <Bitmap x:Key="IconShield">avares://OneLauncher/Assets/icos/shield.png</Bitmap>
             <Bitmap x:Key="IconSkin">avares://OneLauncher/Assets/icos/skin.png</Bitmap>
+            <Bitmap x:Key="IconSpeed">avares://OneLauncher/Assets/icos/speed.png</Bitmap>
+            <Bitmap x:Key="IconUser">avares://OneLauncher/Assets/icos/user.png</Bitmap>
             <Bitmap x:Key="IconVersion">avares://OneLauncher/Assets/icos/version.png</Bitmap>
             <!-- END GENERATED ICONS: Light -->
             <SolidColorBrush x:Key="MainWindowBackgroundBrush" Color="#99FFFFFF"/>
@@ -75,6 +87,9 @@
             <Bitmap x:Key="IconAdd">avares://OneLauncher/Assets/icos/white/add.png</Bitmap>
             <Bitmap x:Key="IconBack">avares://OneLauncher/Assets/icos/white/back.png</Bitmap>
             <Bitmap x:Key="IconBrowser">avares://OneLauncher/Assets/icos/white/browser.png</Bitmap>
+            <Bitmap x:Key="IconCloud">avares://OneLauncher/Assets/icos/white/cloud.png</Bitmap>
+            <Bitmap x:Key="IconCloudDownload">avares://OneLauncher/Assets/icos/white/cloudDownload.png</Bitmap>
+            <Bitmap x:Key="IconDashboard">avares://OneLauncher/Assets/icos/white/dashboard.png</Bitmap>
             <Bitmap x:Key="IconDel">avares://OneLauncher/Assets/icos/white/del.png</Bitmap>
             <Bitmap x:Key="IconDownload">avares://OneLauncher/Assets/icos/white/download.png</Bitmap>
             <Bitmap x:Key="IconDownloadnow">avares://OneLauncher/Assets/icos/white/downloadnow.png</Bitmap>
@@ -82,15 +97,24 @@
             <Bitmap x:Key="IconError">avares://OneLauncher/Assets/icos/white/error.png</Bitmap>
             <Bitmap x:Key="IconGame">avares://OneLauncher/Assets/icos/white/game.png</Bitmap>
             <Bitmap x:Key="IconHome">avares://OneLauncher/Assets/icos/white/home.png</Bitmap>
+            <Bitmap x:Key="IconImageAdd">avares://OneLauncher/Assets/icos/white/imageAdd.png</Bitmap>
+            <Bitmap x:Key="IconImageRemove">avares://OneLauncher/Assets/icos/white/imageRemove.png</Bitmap>
             <Bitmap x:Key="IconInternet">avares://OneLauncher/Assets/icos/white/internet.png</Bitmap>
+            <Bitmap x:Key="IconKey">avares://OneLauncher/Assets/icos/white/key.png</Bitmap>
             <Bitmap x:Key="IconLaunch">avares://OneLauncher/Assets/icos/white/launch.png</Bitmap>
+            <Bitmap x:Key="IconLightning">avares://OneLauncher/Assets/icos/white/lightning.png</Bitmap>
+            <Bitmap x:Key="IconMagic">avares://OneLauncher/Assets/icos/white/magic.png</Bitmap>
+            <Bitmap x:Key="IconMemory">avares://OneLauncher/Assets/icos/white/memory.png</Bitmap>
             <Bitmap x:Key="IconPin">avares://OneLauncher/Assets/icos/white/pin.png</Bitmap>
             <Bitmap x:Key="IconRefresh">avares://OneLauncher/Assets/icos/white/refresh.png</Bitmap>
             <Bitmap x:Key="IconSave">avares://OneLauncher/Assets/icos/white/save.png</Bitmap>
             <Bitmap x:Key="IconSearch">avares://OneLauncher/Assets/icos/white/search.png</Bitmap>
             <Bitmap x:Key="IconServer">avares://OneLauncher/Assets/icos/white/server.png</Bitmap>
             <Bitmap x:Key="IconSettings1">avares://OneLauncher/Assets/icos/white/settings1.png</Bitmap>
+            <Bitmap x:Key="IconShield">avares://OneLauncher/Assets/icos/white/shield.png</Bitmap>
             <Bitmap x:Key="IconSkin">avares://OneLauncher/Assets/icos/white/skin.png</Bitmap>
+            <Bitmap x:Key="IconSpeed">avares://OneLauncher/Assets/icos/white/speed.png</Bitmap>
+            <Bitmap x:Key="IconUser">avares://OneLauncher/Assets/icos/white/user.png</Bitmap>
             <Bitmap x:Key="IconVersion">avares://OneLauncher/Assets/icos/white/version.png</Bitmap>
             <!-- END GENERATED ICONS: Dark -->
             <SolidColorBrush x:Key="MainWindowBackgroundBrush" Color="#99181820"/>

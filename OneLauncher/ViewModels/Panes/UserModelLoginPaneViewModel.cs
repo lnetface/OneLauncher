@@ -39,38 +39,16 @@ internal partial class UserModelLoginPaneViewModel : BaseViewModel, IPaneHost
     public bool _IsYaLogin = true;
     [ObservableProperty]
     public bool _IsMsaLogin = false;
-    private ListBoxItem _whiceLoginType;
-    public ListBoxItem WhiceLoginType
+    public AccountType[] LoginTypes { get; } = [AccountType.Offline, AccountType.Msa, AccountType.Yggdrasil];
+
+    [ObservableProperty]
+    private AccountType selectedLoginType = AccountType.Offline;
+
+    partial void OnSelectedLoginTypeChanged(AccountType value)
     {
-        set
-        {
-            _whiceLoginType = value;
-            if (value.Content == "离线账户")
-            {
-                Debug.WriteLine("离线登入");
-                IsYaLogin = true;
-                IsMsaLogin = false;
-                IsRYaLogin = false;
-            }
-            if (value.Content == "微软账户")
-            {
-                Debug.WriteLine("微软登入");
-                IsYaLogin = false;
-                IsMsaLogin = true;
-                IsRYaLogin = false;
-            }
-            if (value.Content == "外置登入")
-            {
-                Debug.WriteLine("外置登入");
-                IsYaLogin = false;
-                IsMsaLogin = false;
-                IsRYaLogin = true;
-            }
-        }
-        get
-        {
-            return _whiceLoginType;
-        }
+        IsYaLogin = value == AccountType.Offline;
+        IsMsaLogin = value == AccountType.Msa;
+        IsRYaLogin = value == AccountType.Yggdrasil;
     }
     #region 外置登入
     [ObservableProperty] public string _RUserName;

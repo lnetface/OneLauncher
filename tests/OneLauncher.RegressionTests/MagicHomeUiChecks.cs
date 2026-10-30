@@ -283,26 +283,31 @@ internal static class MagicHomeUiChecks
         var customData = Path.Combine(root, "customdata");
         var import = store.GetMethod("ImportAsync")!;
         var first = await (Task<string>)import.Invoke(null, [sourcePath])!;
+        var firstWrite = File.GetLastWriteTimeUtc(first);
+        await Task.Delay(20);
         var copied = await (Task<string>)import.Invoke(null, [sourcePath])!;
-        var expectedRoot = Path.Combine(customData, "home-background") + Path.DirectorySeparatorChar;
-        Assert(copied.StartsWith(expectedRoot, StringComparison.OrdinalIgnoreCase) && File.Exists(copied) &&
-            File.ReadAllBytes(copied).SequenceEqual(File.ReadAllBytes(sourcePath)),
-            $"Background must be copied into customdata: {copied}");
-        Assert(!File.Exists(first) && (string?)store.GetMethod("FindCurrent")!.Invoke(null, null) == copied,
-            "Replacing a background must remove the previous copy and use the new one");
+        var expected = Path.Combine(customData, "home-background.png");
+        var header = File.ReadAllBytes(copied).Take(8).ToArray();
+        Assert(first == expected && copied == expected && File.Exists(copied) &&
+            header.SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }),
+            $"Background must be stored as customdata/home-background.png: {copied}");
+        Assert(File.GetLastWriteTimeUtc(copied) >= firstWrite &&
+            (string?)store.GetMethod("FindCurrent")!.Invoke(null, null) == expected &&
+            Directory.GetFiles(customData, "*", SearchOption.AllDirectories).Length == 1,
+            "Replacing a background must overwrite the only stored file");
 
         var invalid = Path.Combine(root, "broken.png");
         File.WriteAllText(invalid, "not an image");
         var rejected = false;
         try { await (Task<string>)import.Invoke(null, [invalid])!; }
         catch (OlanException) { rejected = true; }
-        Assert(rejected && (string?)store.GetMethod("FindCurrent")!.Invoke(null, null) == copied,
+        Assert(rejected && (string?)store.GetMethod("FindCurrent")!.Invoke(null, null) == expected,
             "Invalid images must be rejected without replacing the current background");
 
         store.GetMethod("Clear")!.Invoke(null, null);
-        Assert(File.Exists(sourcePath) && !File.Exists(copied) && Directory.Exists(expectedRoot) &&
+        Assert(File.Exists(sourcePath) && !File.Exists(expected) &&
             store.GetMethod("FindCurrent")!.Invoke(null, null) == null,
-            "Clearing must remove copies only, never the user's original file or the store root");
+            "Clearing must remove only the stored background, never the user's original file");
     }
 
     private static string? Name(object? item) => item?.GetType().GetProperty("Name")?.GetValue(item) as string;

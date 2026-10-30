@@ -17,6 +17,8 @@
 
   <Target Name="ValidateOneLauncherTargetPlatform" BeforeTargets="PrepareForBuild;PrepareForPublish"
           Condition="'$(DesignTimeBuild)' != 'true'">
+    <Error Condition="'$(PulishProfile)' != ''"
+           Text="PulishProfile is misspelled. Use dotnet publish OneLauncher.Desktop/OneLauncher.Desktop.csproj -p:PublishProfile=WindowsAot" />
     <Error Condition="'$(RuntimeIdentifier)' == '' and '$(Configuration)' != 'Debug'"
            Text="Release builds require an explicit RuntimeIdentifier. Use -r win-x64/linux-x64/osx-arm64 or a platform PublishProfile." />
     <Error Condition="'$(RuntimeIdentifier)' != '' and !$([System.Text.RegularExpressions.Regex]::IsMatch('$(RuntimeIdentifier)', '^(win|linux|osx)-(x64|arm64)$'))"

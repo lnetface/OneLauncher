@@ -3,12 +3,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:easing="using:Avalonia.Animation.Easings"
+        xmlns:chrome="using:Avalonia.Controls.Chrome"
         mc:Ignorable="d" d:DesignWidth="860" d:DesignHeight="560"
         x:Class="OneLauncher.Views.MainWindow"
         Icon="avares://OneLauncher/Assets/window-logo.ico"
-        Title="OneLauncher"
+        Title=""
         TransparencyLevelHint="AcrylicBlur"
         ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="30"
 		Background="{DynamicResource MainWindowBackgroundBrush}"
         Width="880"
         Height="560"
@@ -17,7 +19,17 @@
         x:Name="MainWindowLabel">
 	<Window.Resources>
 		<Thickness x:Key="LeftButtonListItemMargin">8</Thickness>
+		<!-- Avalonia 12 draws its own title above the existing client title. -->
+		<SolidColorBrush x:Key="TitleBarBackgroundBrush" Color="Transparent"/>
 	</Window.Resources>
+	<Window.WindowDecorationsTheme>
+		<ControlTheme TargetType="chrome:WindowDrawnDecorations"
+                      BasedOn="{StaticResource {x:Type chrome:WindowDrawnDecorations}}">
+			<Style Selector="^ /template/ Panel#PART_TitleTextPanel > TextBlock">
+				<Setter Property="IsVisible" Value="False"/>
+			</Style>
+		</ControlTheme>
+	</Window.WindowDecorationsTheme>
 	<SplitView x:Name="SidebarSplitView"
                IsPaneOpen="False"
                DisplayMode="CompactInline"
