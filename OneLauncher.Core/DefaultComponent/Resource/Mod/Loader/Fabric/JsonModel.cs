@@ -73,6 +73,9 @@ public class FabricLibrary
 
     [JsonPropertyName("size")]
     public int Size { get; set; }
+
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
 }
 public class FabricMainClass
 {

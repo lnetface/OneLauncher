@@ -32,8 +32,8 @@ internal static class ForgeIntegrationTests
             .Split(',').Select(value =>
             {
                 var parts = value.Split(':');
-                if (parts.Length != 2 || parts[0] is not ("forge" or "neoforge") ||
-                    !Version.TryParse(parts[1], out _)) throw new ArgumentException("--cases 格式为 forge:1.21.1,neoforge:1.21.1");
+                if (parts.Length != 2 || parts[0] is not ("forge" or "neoforge" or "quilt") ||
+                    !Version.TryParse(parts[1], out _)) throw new ArgumentException("--cases 格式为 forge:1.21.1,neoforge:1.21.1,quilt:1.21.11");
                 return new Case(parts[0], parts[1]);
             }).ToArray();
         var observeSeconds = int.Parse(Value("--seconds") ?? "45");
@@ -41,7 +41,7 @@ internal static class ForgeIntegrationTests
         if (observeSeconds < 1 || repeat is < 1 or > 10) throw new ArgumentException("--seconds 必须为正数，--repeat 范围为 1 到 10。");
         if (args.Contains("--launch-only") && args.Contains("--install-only")) throw new ArgumentException("不能同时指定 --launch-only 和 --install-only。");
         var probe = args.Contains("--probe-mod");
-        if (probe && (args.Contains("--install-only") || cases.Any(c => c.Minecraft != "1.21.1")))
+        if (probe && (args.Contains("--install-only") || cases.Any(c => c.Loader == "quilt" || c.Minecraft != "1.21.1")))
             throw new ArgumentException("--probe-mod 仅支持 Forge/NeoForge 1.21.1 的启动实验。");
         var runId = Guid.NewGuid().ToString("N")[..8];
         var results = new List<Result>();
@@ -66,7 +66,7 @@ internal static class ForgeIntegrationTests
                 void Log(string message) { lock (sync) { if (!loggingComplete) log.WriteLine(message); } }
                 Console.WriteLine($"START {test.Loader} {test.Minecraft} attempt={attempt}/{repeat}");
                 var game = new GameData($"ConsoleTest {test.Loader} {test.Minecraft}", test.Minecraft,
-                    test.Loader == "forge" ? ModEnum.forge : ModEnum.neoforge, user.UserID)
+                    test.Loader switch { "forge" => ModEnum.forge, "neoforge" => ModEnum.neoforge, _ => ModEnum.quilt }, user.UserID)
                 {
                     InstanceId = "forge-test-" + test.Loader + "-" + test.Minecraft + "-" + runId,
                     CustomJvmOptimizationArguments = new JvmArguments { mode = OptimizationMode.None },
@@ -93,9 +93,10 @@ internal static class ForgeIntegrationTests
                         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token);
                         timeout.CancelAfter(TimeSpan.FromMinutes(20));
                         var info = await DownloadInfo.Create(test.Minecraft,
-                            new ModType { IsForge = test.Loader == "forge", IsNeoForge = test.Loader == "neoforge" },
+                            new ModType { IsForge = test.Loader == "forge", IsNeoForge = test.Loader == "neoforge", IsQuilt = test.Loader == "quilt" },
                             isAllowToUseBetaNeoforge: args.Contains("--allow-beta"),
-                            isUseRecommendedToInstallForge: args.Contains("--recommended"), defaultGameData: game);
+                            isUseRecommendedToInstallForge: args.Contains("--recommended"), isDownloadQuiltWhitQSL: false,
+                            defaultGameData: game);
                         var previous = "";
                         var last = Stopwatch.StartNew();
                         var progress = new InlineProgress<(DownProgress Title, int AllFiles, int DownedFiles, string DowingFileName)>(p =>
@@ -114,7 +115,9 @@ internal static class ForgeIntegrationTests
                     }
                     using (var installed = JsonDocument.Parse(await File.ReadAllTextAsync(
                         Path.Combine(core.VersionListManager.GameRootPath, "versions", test.Minecraft, $"version.{test.Loader}.json"))))
-                        build = installed.RootElement.GetProperty("id").GetString();
+                        build = test.Loader == "quilt"
+                            ? installed.RootElement.GetProperty("loader").GetProperty("version").GetString()
+                            : installed.RootElement.GetProperty("id").GetString();
                     if (!args.Contains("--install-only"))
                     {
                         if (probe)

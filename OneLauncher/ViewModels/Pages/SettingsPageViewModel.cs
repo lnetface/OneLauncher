@@ -589,7 +589,8 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         [
         DownloadSourceStrategy.OfficialOnly,
         DownloadSourceStrategy.RaceWithBmcl,
-        DownloadSourceStrategy.RaceWithOlan
+        DownloadSourceStrategy.RaceWithOlan,
+        DownloadSourceStrategy.RaceWithSkyCrystal
         ];
     [ObservableProperty]
     public DownloadSourceStrategy _SelectedDownloadSource = DownloadSourceStrategy.OfficialOnly;

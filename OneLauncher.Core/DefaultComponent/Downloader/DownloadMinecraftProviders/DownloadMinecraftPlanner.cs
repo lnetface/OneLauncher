@@ -73,6 +73,15 @@ internal partial class DownloadMinecraft
             {
                 var dependencies = await provider.GetDependencies(ReportMeta);
                 ReportMeta($"当前加载器信息收集完成：{dependencies.Count} 个文件条目。");
+                // 经检查，部分Forge版本的模组加载器依赖列表和原版依赖库列表重合，下载时会出现竞态条件，所以这里去重
+                if (provider.GetType() == typeof(ForgeProvider) || provider.GetType() == typeof(NeoforgeProvider))
+                {
+                    foreach (var dep in dependencies)
+                    {
+                        if (libraryFiles.Contains(dep))
+                            libraryFiles.Remove(dep);
+                    }
+                }
                 modFiles.AddRange(dependencies);
                 allFiles.AddRange(dependencies);
             }

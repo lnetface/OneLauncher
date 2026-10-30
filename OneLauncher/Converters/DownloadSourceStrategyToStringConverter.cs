@@ -21,6 +21,7 @@ public class DownloadSourceStrategyToStringConverter : IValueConverter
                 DownloadSourceStrategy.OfficialOnly => "官方源",
                 DownloadSourceStrategy.RaceWithBmcl => "BMCLAPI源竞速",
                 DownloadSourceStrategy.RaceWithOlan => "OLON源竞速",
+                DownloadSourceStrategy.RaceWithSkyCrystal => "SkyCrystal源竞速",
                 _ => value.ToString() // 作为备用，显示原始名称
             };
         }

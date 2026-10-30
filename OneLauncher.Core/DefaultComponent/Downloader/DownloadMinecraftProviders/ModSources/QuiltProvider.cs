@@ -33,8 +33,8 @@ internal class QuiltProvider : IModLoaderConcreteProviders
         using Stream rep = await Init.Download.UnityClient
             .GetStreamAsync($"https://meta.quiltmc.org/v3/versions/loader/{_context.ID}");
         using JsonDocument document = JsonDocument.Parse(rep);
-        JsonElement firstElement = document.RootElement[0];
-        var info = firstElement.Deserialize(FabricJsonContext.Default.FabricRoot)
+        JsonElement selectedElement = SelectLoader(document.RootElement);
+        var info = selectedElement.Deserialize(FabricJsonContext.Default.FabricRoot)
         ?? throw new OlanException("内部错误", "无法解析Quilt元数据");
 
         // 写入到文件
@@ -63,5 +63,28 @@ internal class QuiltProvider : IModLoaderConcreteProviders
             }
         }
         return quiltDependencies;
+    }
+
+    // Quilt Meta 的返回顺序不是版本顺序，优先选择最高稳定版，没有稳定版时才使用接口首项。
+    private JsonElement SelectLoader(JsonElement loaders)
+    {
+        JsonElement? fallback = null;
+        JsonElement selected = default;
+        Version? selectedVersion = null;
+        foreach (var item in loaders.EnumerateArray())
+        {
+            fallback ??= item;
+            string? version = item.GetProperty("loader").GetProperty("version").GetString();
+            if (version == null || version.Contains('-') || !Version.TryParse(version, out var parsed))
+                continue;
+            if (selectedVersion == null || parsed > selectedVersion)
+            {
+                selectedVersion = parsed;
+                selected = item;
+            }
+        }
+        return selectedVersion != null
+            ? selected
+            : fallback ?? throw new OlanException("下载失败", $"Quilt 未提供 Minecraft {_context.ID} 可用的加载器");
     }
 }

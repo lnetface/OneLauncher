@@ -70,6 +70,9 @@ internal class RaceDownloader
         try
         {
             HttpResponseMessage winnerResponse = await winnerTask;
+#if DEBUG
+            Debug.WriteLine($"胜出源 {winnerResponse.RequestMessage.RequestUri}");
+#endif
             // 保留获胜响应的取消令牌，直到内容读取完成；否则会把获胜源的响应流一起取消。
             if (winnerResponse.IsSuccessStatusCode)
                 successfulResponse = winnerResponse;

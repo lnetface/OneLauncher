@@ -58,7 +58,7 @@ public class QuiltNJParser
         const string fabricBaseUrl = "https://maven.fabricmc.net/"; // [!code ++]
         List<NdDowItem> dowItems = new List<NdDowItem>(info.LauncherMeta.Libraries.Common.Count + 3);
 
-        // 处理通用库 (通常在 quilt launcherMeta 中定义，应使用 quilt 源)
+        // Quilt Meta 为每个通用库提供所属 Maven 仓库，缺失时兼容旧版保存文件。
         foreach (var item in info.LauncherMeta.Libraries.Common)
         {
             string[] parts = item.Name.Split(':');
@@ -70,7 +70,10 @@ public class QuiltNJParser
                                                   artifactId,
                                                   version,
                                                   $"{artifactId}-{version}.jar");
-            string url = $"{quiltBaseUrl}{urlPathSegments.Replace('\\', '/')}";
+            string baseUrl = !string.IsNullOrWhiteSpace(item.Url)
+                ? item.Url.TrimEnd('/') + "/"
+                : groupId.StartsWith("org.quiltmc", StringComparison.Ordinal) ? quiltBaseUrl : fabricBaseUrl;
+            string url = $"{baseUrl}{urlPathSegments.Replace('\\', '/')}";
 
             string fullPath = Path.Combine(basePath,
                                                 "libraries",

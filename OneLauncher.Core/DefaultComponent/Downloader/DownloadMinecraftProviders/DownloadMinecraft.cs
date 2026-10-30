@@ -47,6 +47,11 @@ internal partial class DownloadMinecraft
                 new MojangSourceDownloadUrlGetter(),
                 new OlanSourceDownloadUrlGetter()
             ],
+            DownloadSourceStrategy.RaceWithSkyCrystal =>
+            [
+                new MojangSourceDownloadUrlGetter(),
+                new SkyCrystalSourceDownloadUrlGetter(info.ID)
+            ],
             _ => throw new OlanException("内部错误", "未知的下载策略")
         };
     }
@@ -73,10 +78,9 @@ internal partial class DownloadMinecraft
         if (cancelToken.IsCancellationRequested)
             return;
         // 模组加载器的下载和安装是后台任务
-        Task modInstallTasker = 
-            plan.ModProviders != null && (info.UserInfo.Select(x => x.ModLoader == ModEnum.none ? false : true).All(x => x == true))
+        await ((plan.ModProviders.Length != 0)
             ? UnityModsInstallTasker(plan.ModLoaderFiles, plan.ModProviders,javaInstallTask)
-            : Task.CompletedTask;
+            : Task.CompletedTask);
         
         await DownloadLibrariesSupportTasker(plan.LibraryFiles);
         if (cancelToken.IsCancellationRequested)
@@ -93,7 +97,6 @@ internal partial class DownloadMinecraft
             return;
 
         // 5. 等待后台任务完成
-        await modInstallTasker;
         await javaInstallTask;
 
         if (cancelToken.IsCancellationRequested)

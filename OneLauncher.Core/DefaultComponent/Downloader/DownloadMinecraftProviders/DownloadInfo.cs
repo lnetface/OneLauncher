@@ -14,7 +14,8 @@ public enum DownloadSourceStrategy
 {
     OfficialOnly,
     RaceWithBmcl,
-    RaceWithOlan
+    RaceWithOlan,
+    RaceWithSkyCrystal
 }
 public partial class DownloadInfo
 {

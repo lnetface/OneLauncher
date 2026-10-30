@@ -57,6 +57,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
     /// </summary>
     public async Task GetAASServerInfo()
     {
+        var task = UnitedCore.Core.TaskManager.CreateTask($"检查 {ReadableAddress} 服务器状态"); 
         #region 检查
         // 地址检查已经迁移到 ServerInfo构造函数中
         HttpResponseMessage response;
@@ -67,7 +68,8 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
         }
         catch (HttpRequestException ex)
         {
-            throw new OlanException("无法获取服务器信息", "连接服务器状态 API 失败", OlanExceptionAction.Error, ex);
+            task.SetFailed( new OlanException("无法获取服务器信息", "连接服务器状态 API 失败", OlanExceptionAction.Error, ex));
+            return;
         }
         #endregion
 
@@ -75,10 +77,12 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
         {
             await using Stream body = await response.Content.ReadAsStreamAsync();
             if (!response.IsSuccessStatusCode)
-                throw new OlanException("无法获取服务器信息", "服务器请求失败");
+            {
+                task.SetFailed(new OlanException("无法获取服务器信息", "服务器请求失败"));
+                return;
+            }
 
-            JsonNode node = (await JsonNode.ParseAsync(body))?.Root
-                ?? throw new OlanException("无法获取服务器信息", "响应不是 JSON 对象");
+            JsonNode node = (await JsonNode.ParseAsync(body))?.Root!;
 
             bool online;
             string? description;
@@ -93,15 +97,16 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
             }
             catch (Exception ex) when (ex is JsonException or InvalidOperationException)
             {
-                throw new OlanException("无法获取服务器信息", "服务器状态 API 返回了无效数据", OlanExceptionAction.Error, ex);
+                task.SetFailed(new OlanException("无法获取服务器信息", "服务器状态 API 返回了无效数据", OlanExceptionAction.Error, ex));
+                return;
             }
 
             if (!online)
             {
-                throw new OlanException(
+                task.SetFailed(new OlanException(
                     "服务器离线",
                     $"无法连接到服务器 {ServerInfo.Ip}:{ServerInfo.Port}",
-                    OlanExceptionAction.Warning);
+                    OlanExceptionAction.Warning));
             }
 
             PlayersMax = playersMax;
@@ -111,6 +116,8 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
                 await SaveServerIcon(icon);
             if (Description == null && description != null)
                 Description = description;
+
+            task.SetDone();
         }
     }
 

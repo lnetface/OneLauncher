@@ -60,6 +60,7 @@ public class TaskInstance
     public void SetDone()
     {
         Status = TaskInfoStatus.Finished;
+        Progress = 100;
         Finished?.Invoke();
     }
     public TaskInstance(string name,CancellationTokenSource? cts = null)

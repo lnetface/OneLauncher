@@ -57,6 +57,8 @@ public partial class DownloadInfo
                 gameData.Add(new GameData($"{versionId} - neoforge", versionId, ModEnum.neoforge, UnitedCore.Core.AccountManager.GetDefaultUser().UserID));
             if (modType.IsQuilt)
                 gameData.Add(new GameData($"{versionId} - quilt", versionId, ModEnum.quilt, UnitedCore.Core.AccountManager.GetDefaultUser().UserID));
+            if (!modType.IsFabric && !modType.IsForge && !modType.IsNeoForge && !modType.IsQuilt)
+                gameData.Add(new GameData($"{versionId} - vanilla", versionId, ModEnum.none, UnitedCore.Core.AccountManager.GetDefaultUser().UserID));
         }
         // 确定下载信息
         VersionBasicInfo versionDownloadInfo =
