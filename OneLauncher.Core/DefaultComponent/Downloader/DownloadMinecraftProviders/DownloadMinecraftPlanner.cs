@@ -15,7 +15,7 @@ internal partial class DownloadMinecraft
         List<NdDowItem> LibraryFiles,
         List<NdDowItem> AssetFiles,
         List<NdDowItem>? ModLoaderFiles,
-        NdDowItem ClientMainFile,
+        NdDowItem? ClientMainFile,
         NdDowItem? LoggingFile,
         IModLoaderConcreteProviders[] ModProviders // 如果原版则为null
     );
@@ -42,7 +42,7 @@ internal partial class DownloadMinecraft
         );
         // 一些别的
         ReportMeta($"已收集 {assetFiles.Count} 个资源条目，正在收集游戏主文件和日志配置信息...");
-        var clientFile = mation.GetMainFile();
+        NdDowItem? clientFile = mation.GetMainFile();
         var loggingFile = mation.GetLoggingConfig();
         #endregion
 
@@ -65,7 +65,7 @@ internal partial class DownloadMinecraft
         var allFiles = new List<NdDowItem>(libraryFiles.Count+assetFiles.Count+2);
         allFiles.AddRange(assetFiles);
         allFiles.AddRange(libraryFiles);
-        allFiles.Add(clientFile);
+        allFiles.Add(clientFile.Value!);
         if(loggingFile != null)
             allFiles.Add((NdDowItem)loggingFile);
         if (providers.Count != 0)
@@ -85,6 +85,11 @@ internal partial class DownloadMinecraft
                 modFiles.AddRange(dependencies);
                 allFiles.AddRange(dependencies);
             }
+        // 经测试，对于已存在的游戏部分应该对client文件进行校验，尤其是游戏运行时会报错无权访问
+        // 校验通过则跳过写入；不通过则保留下载项，按损坏文件重新下载。
+        if (File.Exists(clientFile.Value.path)
+            && await info.DownloadTool.IsSha1Matched(clientFile.Value, cancelToken))
+            clientFile = null;
 
         ReportMeta($"已收集原版库 {libraryFiles.Count} 项、资源 {assetFiles.Count} 项、加载器文件 {modFiles.Count} 项，正在检查本地已有文件...");
         

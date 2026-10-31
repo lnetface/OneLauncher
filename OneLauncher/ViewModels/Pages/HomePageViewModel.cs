@@ -505,6 +505,7 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
     [RelayCommand]
     public async Task Import()
     {
+        var task = _unitedCore.TaskManager.CreateTask("整合包导入");
         try
         {
             var topLevel = TopLevel.GetTopLevel(MainWindow.mainwindow);
@@ -526,11 +527,13 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
                 var selectedFile = files.FirstOrDefault();
 
                 if (files == null || !files.Any() || selectedFile == null)
+                {
+                    task.Cancel();
                     return;
+                }
 
                 string filePath = selectedFile.Path.LocalPath;
-                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("正在导入。。。（请打开任务中心查看进度）"));
-                var task = _unitedCore.TaskManager.CreateTask("整合包导入");
+                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("正在导入。。。(点击查看进度）",openTaskCenterAfterClick:true));
                 await ModpackImporter.ImportFromMrpackAsync(filePath,
                     Init.GameRootPath,
                     new Progress<(DownProgress a, int b, int c, string d)>
@@ -547,10 +550,12 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
         }
         catch(OlanException ex)
         {
+            task.SetFailed(ex);
             await OlanExceptionWorker.ForOlanException(ex, () => _ = Import());
         }
         catch (Exception ex)
         {
+            task.SetFailed(ex);
             await OlanExceptionWorker.ForUnknowException(ex, () => _ = Import());
         }
     }

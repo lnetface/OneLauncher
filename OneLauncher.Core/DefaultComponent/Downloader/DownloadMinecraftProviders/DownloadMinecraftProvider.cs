@@ -27,9 +27,11 @@ internal partial class DownloadMinecraft
 {
     private readonly JavaManager _javaManager = UnitedCore.Core.JavaManager;
     private readonly RaceDownloader _raceDownloader = new RaceDownloader(Init.Download.UnityClient);
-    private Task DownloadClientTasker(NdDowItem main)
+    private Task DownloadClientTasker(NdDowItem? main)
     {
-        NdDowItem[] downloadSources = _urlProviders.Select(p => p.GetClientMainFile(main)).ToArray();
+        if (main == null)
+            return Task.CompletedTask;
+        NdDowItem[] downloadSources = _urlProviders.Select(p => p.GetClientMainFile(main.Value)).ToArray();
         return _raceDownloader.RaceSingleFileAsync(
             downloadSources,
             cancelToken

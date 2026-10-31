@@ -24,6 +24,7 @@ dotnet ConsoleTest/bin/Debug/net10.0/ConsoleTest.dll --cases forge:1.14.3,forge:
 | `--output <目录>` | 独立结果目录，避免覆盖前一轮结果 |
 | `--info` | 初始化后输出当前游戏目录和 Java 大版本 |
 | `--protocol` | 不初始化核心，读取保存的官方安装器作协议检查 |
+| `--server-dat` | 不初始化核心，离线检查收藏同步到 `servers.dat` 和忽略端口去重；夹具在仓库内生成并自动清理 |
 
 也可使用 `quilt:1.21.11` 测试 Quilt 安装与启动；该模式不下载 QSL。
 

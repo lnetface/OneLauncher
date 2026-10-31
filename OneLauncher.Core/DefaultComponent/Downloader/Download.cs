@@ -355,6 +355,29 @@ internal partial class Download : IDisposable
         }
         return filesToDownload;
     }
+    public async Task<bool> IsSha1Matched(NdDowItem item, CancellationToken token)
+    {
+        using var stream = new FileStream(item.path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, bufferSize: 8192, useAsync: true);
+        using var sha1Hash = SHA1.Create();
+        byte[] hash = await sha1Hash.ComputeHashAsync(stream, token);
+        return string.Equals(Convert.ToHexString(hash), item.sha1, StringComparison.OrdinalIgnoreCase);
+    }
+    public async Task CheckOneSha1(NdDowItem item, CancellationToken token)
+    {
+        using (var stream = new FileStream(item.path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 8192, useAsync: true))
+        using (var sha1Hash = SHA1.Create())
+        {
+            byte[] hash = await sha1Hash.ComputeHashAsync(stream, token);
+            string calculatedSha1 = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            if (!string.Equals(calculatedSha1, item.sha1, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new OlanException(
+                  "安全验证异常",
+                  $"无法校验文件({item.path})Sha1，实际：{calculatedSha1}预期：{item.sha1}{Environment.NewLine}您的电脑可能被黑客入侵了",
+                  OlanExceptionAction.FatalError);
+            }
+        }
+    }
     public async Task CheckAllSha1(List<NdDowItem> FDI, int maxConcurrentSha1,CancellationToken token)
     {
         var semaphore = new SemaphoreSlim(maxConcurrentSha1);
@@ -369,19 +392,8 @@ internal partial class Download : IDisposable
             sha1Tasks.Add(Task.Run(async () =>
             {
                 await semaphore.WaitAsync();
-                using (var stream = new FileStream(item.path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 8192, useAsync: true))
-                using (var sha1Hash = SHA1.Create())
-                {
-                    byte[] hash = await sha1Hash.ComputeHashAsync(stream,token);
-                    string calculatedSha1 = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                    if (!string.Equals(calculatedSha1, item.sha1, StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new OlanException(
-                            "安全验证异常",
-                            $"无法校验文件({item.path})Sha1，实际：{calculatedSha1}预期：{item.sha1}{Environment.NewLine}您的电脑可能被黑客入侵了",
-                            OlanExceptionAction.FatalError);
-                    }
-                }
+
+                await CheckOneSha1(item, token);
                 
                 semaphore.Release();
             },token));

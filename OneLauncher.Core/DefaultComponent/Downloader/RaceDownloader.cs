@@ -161,7 +161,7 @@ internal class RaceDownloader
         {
             using var contentStream = await response.Content.ReadAsStreamAsync();
             Directory.CreateDirectory(Path.GetDirectoryName(main.path)!);
-            using (var fileStream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None,8192,true))
+            using (var fileStream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.Read,8192,true))
                 await contentStream.CopyToAsync(fileStream, cancelToken);
 
             File.Move(temporaryPath, main.path, true);
