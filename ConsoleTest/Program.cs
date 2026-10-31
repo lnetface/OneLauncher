@@ -6,6 +6,7 @@ using OneLauncher.Core.Global;
 
 try
 {
+    if (args.Contains("--server-dat")) return await ServerDatChecks.RunAsync();
     if (args.Contains("--protocol")) return await ForgeProtocolChecks.RunAsync();
     if (args.Contains("--modpack-cleanup"))
     {

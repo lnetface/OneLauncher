@@ -3,6 +3,8 @@ using Avalonia.Controls.Notifications;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using OneLauncher.Codes;
+using OneLauncher.Core.Global;
 using OneLauncher.Core.Global.ModelDataMangers;
 using OneLauncher.Core.Helper.Models;
 using OneLauncher.Core.DefaultComponent.Server;
@@ -94,6 +96,15 @@ internal partial class AddServerPaneViewModel : BaseViewModel, IPaneHost
 
         _dbManager.Data.ServerList.Add(serverEntry);
         await _dbManager.Save();
+        try
+        {
+            await Task.Run(serverEntry.SaveInServerDAT);
+        }
+        catch (OlanException ex)
+        {
+            // 收藏已经保存，游戏列表同步失败时报告错误并保留收藏。
+            await OlanExceptionWorker.ForOlanException(ex);
+        }
         await serverEntry.GetAASServerInfo();
         _onServerInfoUpdated?.Invoke(serverEntry.Id);
         WeakReferenceMessenger.Default.Send(

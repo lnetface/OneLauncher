@@ -1,5 +1,5 @@
 using OneLauncher.Core.Global.ModelDataMangers;
-using OneLauncher.Core.DefaultComponent.Server;
+using OneLauncher.Core.Helper.Models;
 using System;
 using OneLauncher.Views.Panes.PaneViewModels;
 
