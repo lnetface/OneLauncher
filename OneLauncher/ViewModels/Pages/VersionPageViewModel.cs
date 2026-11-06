@@ -144,7 +144,7 @@ internal partial class VersionPageViewModel : BaseViewModel, IPageHost, IListTem
         {
             // 去尝试读取，判断这个服务端版本是否启用了版本隔离
             bool IsVI = true;
-            if (Directory.Exists(Path.Combine(Init.GameRootPath, "versoins", versionExp.VersionID, "servers")))
+            if (Directory.Exists(Path.Combine(Init.GameRootPath, "versions", versionExp.VersionID, "servers")))
                 IsVI = true;
             else if (Directory.Exists(Path.Combine(Init.GameRootPath, "servers")))
                 IsVI = false;
@@ -159,7 +159,7 @@ internal partial class VersionPageViewModel : BaseViewModel, IPageHost, IListTem
             else
                 using (var fs = File.OpenRead(
                                 Path.Combine(versionPath, $"version.json")))
-                    MinecraftServerManger.Run(versionPath,
+                    await MinecraftServerManger.RunAsync(versionExp.VersionID,
                         // 读取源文件获取Java版本
                         (await JsonNode.ParseAsync(
                                     fs))

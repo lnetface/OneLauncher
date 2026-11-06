@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace OneLauncher.Core.Helper;
+
 public static class SystemMemoryHelper
 {
+    /// <summary>所有字段均为 MiB。FreeMB 表示可供新分配使用的估计量。</summary>
     public struct MemoryMetrics
     {
         public double TotalMB { get; set; }
@@ -18,175 +14,91 @@ public static class SystemMemoryHelper
         public double FreeMB { get; set; }
     }
 
-    public static MemoryMetrics GetMemoryMetrics()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return GetWindowsMemoryMetrics();
-        }
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            return GetLinuxMemoryMetrics();
-        }
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            // 在macOS上，命令行工具仍然是最佳选择
-            return GetOsxMemoryMetrics();
-        }
+    public static MemoryMetrics GetMemoryMetrics() => TryGetMemoryMetrics(out var metrics) ? metrics : default;
 
-        // 未知系统的安全默认值
-        return new MemoryMetrics { TotalMB = 4096, FreeMB = 1024, UsedMB = 3072 };
-    }
-
-    private static MemoryMetrics GetWindowsMemoryMetrics()
+    /// <summary>检测失败返回 false，不用虚构的内存值代替真实采样。</summary>
+    public static bool TryGetMemoryMetrics(out MemoryMetrics metrics)
     {
+        metrics = default;
         try
         {
-            var memStatus = new MEMORYSTATUSEX();
-            if (GlobalMemoryStatusEx(memStatus))
+            if (OperatingSystem.IsWindows())
             {
-                double totalMB = memStatus.ullTotalPhys / 1024.0 / 1024.0;
-                double freeMB = memStatus.ullAvailPhys / 1024.0 / 1024.0;
-                double usedMB = totalMB - freeMB;
-
-                return new MemoryMetrics
-                {
-                    TotalMB = Math.Round(totalMB),
-                    FreeMB = Math.Round(freeMB),
-                    UsedMB = Math.Round(usedMB)
-                };
+                var status = new MEMORYSTATUSEX();
+                if (!GlobalMemoryStatusEx(status)) return false;
+                metrics = Create(status.ullTotalPhys / 1048576.0, status.ullAvailPhys / 1048576.0);
             }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to get Windows memory metrics via P/Invoke: {ex.Message}");
-        }
-
-        // 如果API调用失败，返回安全默认值
-        return new MemoryMetrics { TotalMB = 4096, FreeMB = 1024, UsedMB = 3072 };
-    }
-
-    private static MemoryMetrics GetLinuxMemoryMetrics()
-    {
-        try
-        {
-            var output = "";
-            var info = new ProcessStartInfo("/bin/bash", "-c \"free -m\"")
+            else if (OperatingSystem.IsLinux())
             {
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
-
-            using (var process = Process.Start(info)) { output = process.StandardOutput.ReadToEnd(); }
-
-            var lines = output.Split('\n');
-            var memory = lines[1].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-            var metrics = new MemoryMetrics();
-            metrics.TotalMB = double.Parse(memory[1], CultureInfo.InvariantCulture);
-
-            if (memory.Length > 6)
-                metrics.FreeMB = double.Parse(memory[6], CultureInfo.InvariantCulture);
-            else
-            {
-                double free = double.Parse(memory[3], CultureInfo.InvariantCulture);
-                double bufferCache = double.Parse(memory[5], CultureInfo.InvariantCulture);
-                metrics.FreeMB = free + bufferCache;
+                var entries = File.ReadLines("/proc/meminfo")
+                    .Select(line => line.Split([':', ' '], StringSplitOptions.RemoveEmptyEntries))
+                    .Where(parts => parts.Length >= 2)
+                    .ToDictionary(parts => parts[0], parts => double.Parse(parts[1], CultureInfo.InvariantCulture));
+                if (!entries.TryGetValue("MemTotal", out double total) || !entries.TryGetValue("MemAvailable", out double available)) return false;
+                metrics = Create(total / 1024, available / 1024);
             }
-
-            metrics.UsedMB = metrics.TotalMB - metrics.FreeMB;
-            return metrics;
+            else return false;
+            return IsValid(metrics);
         }
-        catch (Exception ex) { return new MemoryMetrics { TotalMB = 4096, FreeMB = 1024, UsedMB = 3072 }; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or OverflowException or ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception or OperationCanceledException)
+        {
+            Debug.WriteLine("内存检测失败：" + ex.Message);
+            metrics = default;
+            return false;
+        }
     }
 
-    private static MemoryMetrics GetOsxMemoryMetrics()
+    internal static bool IsValid(MemoryMetrics metrics) => double.IsFinite(metrics.TotalMB) && double.IsFinite(metrics.FreeMB) && metrics.TotalMB > 0 && metrics.FreeMB >= 0 && metrics.FreeMB <= metrics.TotalMB;
+    private static MemoryMetrics Create(double total, double available) => new() { TotalMB = total, FreeMB = available, UsedMB = total - available };
+
+    /// <summary>macOS 查询使用可取消的异步进程，不阻塞 UI；其他平台直接采样。</summary>
+    public static async Task<MemoryMetrics?> GetMemoryMetricsAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!OperatingSystem.IsMacOS()) return TryGetMemoryMetrics(out var metrics) ? metrics : null;
         try
         {
-            double totalMB = GetOsxTotalMemory() / 1024.0 / 1024.0;
-
-            // 获取页面信息来计算已用内存
-            var output = "";
-            var info = new ProcessStartInfo("/bin/bash", "-c \"vm_stat\"")
-            {
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            using (var process = Process.Start(info)) { output = process.StandardOutput.ReadToEnd(); }
-
-            var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            var infoDic = lines
-                .Skip(1)
-                .Select(line => line.Split(new[] { ':' }, 2))
-                .ToDictionary(parts => parts[0].Trim(), parts => long.Parse(Regex.Match(parts[1], @"\d+").Value));
-
-            long pageSize = (long)GetOsxPageSize();
-            long pagesActive = infoDic.GetValueOrDefault("Pages active");
-            long pagesInactive = infoDic.GetValueOrDefault("Pages inactive");
-            long pagesSpeculative = infoDic.GetValueOrDefault("Pages speculative");
-            long pagesWiredDown = infoDic.GetValueOrDefault("Pages wired down");
-            long pagesPurgeable = infoDic.GetValueOrDefault("Pages purgeable");
-
-            // ProjBobcat的算法比较复杂，一个简化的、被广泛接受的“可用内存”估算
-            // 是 (inactive + free + speculative) * pageSize。我们这里用更简单的总-已用
-            double usedMB = (pagesActive + pagesWiredDown) * pageSize / 1024.0 / 1024.0;
-            double freeMB = totalMB - usedMB;
-
-            return new MemoryMetrics
-            {
-                TotalMB = Math.Round(totalMB),
-                FreeMB = Math.Round(freeMB),
-                UsedMB = Math.Round(usedMB)
-            };
+            var total = await JavaRuntimeInspector.RunProbeAsync("/usr/sbin/sysctl", ["-n", "hw.memsize"], cancellationToken);
+            var pages = await JavaRuntimeInspector.RunProbeAsync("/usr/bin/vm_stat", [], cancellationToken);
+            if (total.ExitCode != 0 || pages.ExitCode != 0) return null;
+            return ParseMacMemory(total.Output, pages.Output);
         }
-        catch (Exception ex) { /* ... */ return new MemoryMetrics { TotalMB = 4096, FreeMB = 1024, UsedMB = 3072 }; }
+        catch (Exception ex) when (ex is IOException or FormatException or OverflowException or ArgumentException)
+        {
+            Debug.WriteLine("内存检测失败：" + ex.Message);
+            return null;
+        }
     }
 
-    // macOS 辅助方法
-    private static ulong GetOsxTotalMemory()
+    internal static MemoryMetrics? ParseMacMemory(string totalOutput, string output)
     {
-        var info = new ProcessStartInfo("/usr/sbin/sysctl", "hw.memsize") { RedirectStandardOutput = true };
-        using var process = Process.Start(info);
-        var output = process.StandardOutput.ReadToEnd();
-        var value = output.Split(' ', StringSplitOptions.RemoveEmptyEntries).Last();
-        return ulong.TryParse(value, out var outVal) ? outVal : 0;
-    }
-    private static uint GetOsxPageSize()
-    {
-        var info = new ProcessStartInfo("/bin/bash", "-c \"vm_stat\"") { RedirectStandardOutput = true };
-        using var process = Process.Start(info);
-        var output = process.StandardOutput.ReadLine(); // 只读第一行
-        return uint.TryParse(Regex.Match(output, @"\d+").Value, out var pageSizeOut) ? pageSizeOut : 4096;
+        string header = output.Split('\n')[0];
+        int start = header.IndexOf("page size of ", StringComparison.Ordinal);
+        if (start < 0) return null;
+        double pageSize = double.Parse(header[(start + 13)..].Split(' ')[0], CultureInfo.InvariantCulture);
+        var pages = new Dictionary<string, double>();
+        foreach (string line in output.Split('\n').Skip(1))
+        {
+            int colon = line.IndexOf(':');
+            if (colon > 0 && double.TryParse(line[(colon + 1)..].Trim().TrimEnd('.'), NumberStyles.None, CultureInfo.InvariantCulture, out double count))
+                pages[line[..colon].Trim()] = count;
+        }
+        if (!pages.ContainsKey("Pages free") || pageSize <= 0) return null;
+        // 压缩、活动和 wired 页不计入可用内存。
+        double availablePages = pages.GetValueOrDefault("Pages free") + pages.GetValueOrDefault("Pages inactive") + pages.GetValueOrDefault("Pages speculative");
+        var metrics = Create(double.Parse(totalOutput.Trim(), CultureInfo.InvariantCulture) / 1048576, availablePages * pageSize / 1048576);
+        return IsValid(metrics) ? metrics : null;
     }
 
-    #region Windows P/Invoke Definitions (现在是唯一需要的Windows部分)
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private class MEMORYSTATUSEX
+    [StructLayout(LayoutKind.Sequential)]
+    private sealed class MEMORYSTATUSEX
     {
-        public uint dwLength;
+        public uint dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>();
         public uint dwMemoryLoad;
-        public ulong ullTotalPhys;
-        public ulong ullAvailPhys;
-        public ulong ullTotalPageFile;
-        public ulong ullAvailPageFile;
-        public ulong ullTotalVirtual;
-        public ulong ullAvailVirtual;
-        public ulong ullAvailExtendedVirtual;
-
-        public MEMORYSTATUSEX()
-        {
-            this.dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>();
-        }
+        public ulong ullTotalPhys, ullAvailPhys, ullTotalPageFile, ullAvailPageFile, ullTotalVirtual, ullAvailVirtual, ullAvailExtendedVirtual;
     }
 
+    [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
-
-    #endregion
+    private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX status);
 }
-

@@ -6,6 +6,10 @@ using OneLauncher.Core.Global;
 
 try
 {
+#if JVM_CONFIG_AOT
+    return await JvmOptimizationChecks.RunAsync(args);
+#else
+    if (args.Contains("--jvm-config")) return await JvmOptimizationChecks.RunAsync(args);
     if (args.Contains("--server-dat")) return await ServerDatChecks.RunAsync();
     if (args.Contains("--protocol")) return await ForgeProtocolChecks.RunAsync();
     if (args.Contains("--modpack-cleanup"))
@@ -26,6 +30,7 @@ try
     using var serviceProvider = services.BuildServiceProvider();
     var core = serviceProvider.GetRequiredService<UnitedCore>();
     return await ForgeIntegrationTests.RunAsync(core, args);
+#endif
 }
 catch (Exception exception)
 {

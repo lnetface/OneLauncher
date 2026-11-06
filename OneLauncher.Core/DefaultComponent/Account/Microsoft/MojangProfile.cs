@@ -163,19 +163,20 @@ public class MojangProfile : IDisposable
         // 2. 调用第三方API下载完整的皮肤图片
         try
         {
-            Byte[] skinImage;
-            var responseMessage = await httpClient.GetAsync(sessionUrl);
-            if ((int)responseMessage.StatusCode != 521)
-            {
-                skinImage = await responseMessage.Content.ReadAsByteArrayAsync();
-                await File.WriteAllBytesAsync(Path.Combine(outputPath, $"{uuid}.png"), skinImage);
-            }
-            else
-            {
-                sessionUrl = $"{Init.ConfigManager.Data.DefaultSettings.CrafatarUrl}{uuid}";
-                skinImage = await httpClient.GetByteArrayAsync(sessionUrl);
-                await File.WriteAllBytesAsync(Path.Combine(outputPath, $"{uuid}.png"), skinImage);
-            }
+            await Init.Download.DownloadFile(sessionUrl, Path.Combine(outputPath, $"{uuid}.png"));
+            //Byte[] skinImage;
+            //var responseMessage = await httpClient.GetAsync(sessionUrl);
+            //if ((int)responseMessage.StatusCode != 521)
+            //{
+            //    skinImage = await responseMessage.Content.ReadAsByteArrayAsync();
+            //    await File.WriteAllBytesAsync(Path.Combine(outputPath, $"{uuid}.png"), skinImage);
+            //}
+            //else
+            //{
+            //    sessionUrl = $"{Init.ConfigManager.Data.DefaultSettings.CrafatarUrl}{uuid}";
+            //    skinImage = await httpClient.GetByteArrayAsync(sessionUrl);
+            //    await File.WriteAllBytesAsync(Path.Combine(outputPath, $"{uuid}.png"), skinImage);
+            //}
         }
         catch (HttpRequestException ex)
         {

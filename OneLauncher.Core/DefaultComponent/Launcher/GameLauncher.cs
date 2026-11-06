@@ -51,9 +51,8 @@ internal sealed class GameLauncher : IDisposable
             .SetModType(gameData.ModLoader);
         // 设置额外参数
         JvmArguments jvmArgsToUse = gameData.CustomJvmOptimizationArguments ?? Init.ConfigManger.Data.DefaultSettings.MinecraftJvmArguments;
+        commandBuilder.WithJvmOptimization(jvmArgsToUse);
         List<string> ojr = new(1);
-        if (jvmArgsToUse.mode != OptimizationMode.None)
-            ojr.AddRange(jvmArgsToUse.GetArguments(commandBuilder.versionInfo.GetJavaVersion(), gameData));
         if (gameData.ExtraJvmArguments != null)
             ojr.Add(gameData.ExtraJvmArguments);
         commandBuilder.WithExtraJvmArgs(ojr);
@@ -67,7 +66,7 @@ internal sealed class GameLauncher : IDisposable
         {
             
             progress?.Report(("正在解析并检查游戏依赖库...", 65));
-            using (var launchCommand = await commandBuilder.BuildCommand())
+            using (var launchCommand = await commandBuilder.BuildCommand(cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 progress?.Report(("正在生成最终启动命令...", 75));
@@ -91,14 +90,15 @@ internal sealed class GameLauncher : IDisposable
                 _gameProcess.OutputDataReceived += OnOutputDataReceived;
                 _gameProcess.ErrorDataReceived += OnErrorDataReceived;
                 _gameProcess.Exited += OnGameProcessExited;
+                // The argument file must remain alive until Java has started reading it.
+                cancellationToken.ThrowIfCancellationRequested();
+                progress?.Report(("正在启动 Java 游戏进程...", 85));
+                _gameProcess.Start();
+                _gameProcess.BeginOutputReadLine();
+                _gameProcess.BeginErrorReadLine();
+                progress?.Report(("游戏进程已启动，正在等待游戏初始化...", 90));
+                await _gameProcess.WaitForExitAsync(cancellationToken);
             }
-            progress?.Report(("正在启动 Java 游戏进程...", 85));
-            _gameProcess.Start();
-            _gameProcess.BeginOutputReadLine();
-            _gameProcess.BeginErrorReadLine();
-
-            progress?.Report(("游戏进程已启动，正在等待游戏初始化...", 90));
-            await _gameProcess.WaitForExitAsync(cancellationToken);
         }
         catch(Win32Exception)
         {

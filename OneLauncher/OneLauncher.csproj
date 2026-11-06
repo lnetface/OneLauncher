@@ -32,5 +32,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OneLauncher.Core\OneLauncher.Core.csproj" />
+    <InternalsVisibleTo Include="ConsoleTest" />
   </ItemGroup>
 </Project>

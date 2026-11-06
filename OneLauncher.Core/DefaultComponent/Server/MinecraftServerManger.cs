@@ -46,22 +46,26 @@ public class MinecraftServerManger
             ,"eula=true");
         return versionInfo.GetJavaVersion();
     }
-    public static void Run(string version,int java,bool IsVI)
+    public static async Task RunAsync(string version, int java, bool IsVI, CancellationToken cancellationToken = default)
     {
         using (Process serverProcess = new Process())
         {
             string versionPath = Path.Combine(Global.Init.GameRootPath, "versions", version);
+            var runtime = await UnitedCore.Core.JavaManager.GetRuntimeInfoAsync(java, cancellationToken);
+            var arguments = await Global.Init.ConfigManger.Data.DefaultSettings.MinecraftJvmArguments.GetArgumentsAsync(runtime, cancellationToken);
             serverProcess.StartInfo = new ProcessStartInfo()
             {
-                FileName = UnitedCore.Core.JavaManager.GetJavaExecutablePath(java),
-                Arguments = 
-                string.Join(" ",Global.Init.ConfigManger.Data.DefaultSettings.MinecraftJvmArguments.GetArguments(java,null)) + 
-                            $" -jar {(Path.Combine(versionPath, "server.jar"))}",
+                FileName = runtime.ExecutablePath,
+                UseShellExecute = false,
                 WorkingDirectory =
                 (IsVI)
                 ? Path.Combine(versionPath, "servers")
                 : Path.Combine(Global.Init.GameRootPath,"servers")
             };
+            foreach (string argument in arguments) serverProcess.StartInfo.ArgumentList.Add(argument);
+            serverProcess.StartInfo.ArgumentList.Add("-jar");
+            serverProcess.StartInfo.ArgumentList.Add(Path.Combine(versionPath, "server.jar"));
+            cancellationToken.ThrowIfCancellationRequested();
             serverProcess.Start();
         }
     }

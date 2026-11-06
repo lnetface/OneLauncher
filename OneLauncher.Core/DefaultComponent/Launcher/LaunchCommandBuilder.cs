@@ -5,6 +5,7 @@ using OneLauncher.Core.Helper;
 using OneLauncher.Core.Helper.Models;
 using OneLauncher.Core.Minecraft;
 using System.Runtime.CompilerServices;
+using OneLauncher.Core.DefaultComponent.Launcher.Builders;
 namespace OneLauncher.Core.DefaultComponent.Launcher;
 public partial class LaunchCommandBuilder
 {
@@ -24,6 +25,8 @@ public partial class LaunchCommandBuilder
     private ModEnum modType = ModEnum.none;
     private ServerInfo? serverInfo = null;
     private UserModel loginUser;
+    private JavaRuntimeInfo? javaRuntime;
+    private JvmArguments? optimization;
 
     // 构造函数保持不变
     private LaunchCommandBuilder(
@@ -88,6 +91,11 @@ public partial class LaunchCommandBuilder
         extraJvmArgs = args;
         return this;
     }
+    public LaunchCommandBuilder WithJvmOptimization(JvmArguments configuration)
+    {
+        optimization = configuration;
+        return this;
+    }
     /// <summary>设置额外的游戏参数</summary>
     public LaunchCommandBuilder WithExtraGameArgs(IEnumerable<string> args)
     {
@@ -101,10 +109,10 @@ public partial class LaunchCommandBuilder
         return this;
     }
     #endregion
-    public string GetJavaPath() =>
-        _javaManager.GetJavaExecutablePath(versionInfo.GetJavaVersion());
-    public async Task<LaunchCommand> BuildCommand()
+    public string GetJavaPath() => javaRuntime?.ExecutablePath ?? _javaManager.GetJavaExecutablePath(versionInfo.GetJavaVersion());
+    public async Task<LaunchCommand> BuildCommand(CancellationToken cancellationToken = default)
     {
+        javaRuntime ??= await _javaManager.GetRuntimeInfoAsync(versionInfo.GetJavaVersion(), cancellationToken);
         IModArgStrategy? strategy = null; // 策略可以是null，代表原版
         if (modType != ModEnum.none)
             strategy = await CreateAndInitStrategy();
@@ -112,14 +120,16 @@ public partial class LaunchCommandBuilder
         // 确定主类：如果策略提供了覆盖，则使用策略的；否则用原版的
         string mainClass = strategy?.GetMainClassOverride() ?? versionInfo.GetMainClass();
 
-        // 将策略传递给各个构建器
-        List<string> rargs = new List<string>();
-        if (extraJvmArgs != null)
-            rargs.AddRange(extraJvmArgs);
-        rargs.AddRange(BuildJvmArgs(strategy));
-        rargs.Add(strategy?.GetMainClassOverride() ?? versionInfo.GetMainClass()); // 别把主类忘了
-        rargs.AddRange(BuildGameArgs(gamePath ,strategy));
-        return new LaunchCommand(rargs, commandArgs);
+        var versionArgs = BuildJvmArgs(strategy, out var loaderArgs).ToArray();
+        // BuildGameArgs adds authlib command-line-only arguments, so collect those before normalization.
+        var gameArgs = BuildGameArgs(gamePath, strategy).ToArray();
+        bool optimize = optimization != null && optimization.mode != OptimizationMode.None;
+        var memory = optimize ? await SystemMemoryHelper.GetMemoryMetricsAsync(cancellationToken) : null;
+        var result = await JvmOptimizationPolicy.BuildAsync(optimization, javaRuntime, memory, modType != ModEnum.none,
+            optimize ? JvmOptimizationPolicy.CountMods(gamePath) : 0,
+            [new(10, versionArgs), new(20, loaderArgs), new(40, extraJvmArgs?.ToArray() ?? []), new(40, commandArgs.ToArray(), true)], cancellationToken);
+        List<string> rargs = [.. result.Arguments, mainClass, .. gameArgs];
+        return new LaunchCommand(rargs, result.CommandArguments);
     }
     // 策略方法
     private async Task<IModArgStrategy?> CreateAndInitStrategy()

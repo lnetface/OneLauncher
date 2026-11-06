@@ -28,6 +28,9 @@ public class JavaManager
     public IReadOnlyCollection<int> GetInstalledVersions() =>
         _dbManager.Data.AvailableJavas.Keys.Order().ToArray();
 
+    public Task<OneLauncher.Core.Helper.Models.JavaRuntimeInfo> GetRuntimeInfoAsync(int version, CancellationToken cancellationToken = default)
+        => JavaRuntimeInspector.InspectAsync(GetJavaExecutablePath(version), cancellationToken);
+
     /// <summary>
     /// 解析指定Java版本的可执行文件路径。
     /// </summary>

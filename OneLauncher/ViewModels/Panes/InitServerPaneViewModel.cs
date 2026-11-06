@@ -43,10 +43,16 @@ internal partial class InitServerPaneViewModel : BaseViewModel, IPaneHost
         else
         {
             // 反正后面也要用，这里也读取了索性直接返回一个java版本
-            int javaVersion = await MinecraftServerManger.Init(serverVersion,IsVI);
-            //完成后打开服务端
-            MinecraftServerManger.Run(serverVersion,javaVersion,IsVI);
-            OnPaneClose();
+            try
+            {
+                int javaVersion = await MinecraftServerManger.Init(serverVersion,IsVI);
+                await MinecraftServerManger.RunAsync(serverVersion,javaVersion,IsVI);
+                OnPaneClose();
+            }
+            catch (OlanException ex)
+            {
+                await OlanExceptionWorker.ForOlanException(ex);
+            }
         }
     }
 

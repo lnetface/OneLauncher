@@ -15,7 +15,7 @@ namespace OneLauncher.Core.DefaultComponent.Launcher;
 
 public partial class LaunchCommandBuilder
 {
-    private IEnumerable<string> BuildJvmArgs(IModArgStrategy? strategy)
+    private IEnumerable<string> BuildJvmArgs(IModArgStrategy? strategy, out IReadOnlyList<string> loaderArgs)
     {
         string osName;
 #if ONELAUNCHER_TARGET_WINDOWS
@@ -47,6 +47,7 @@ public partial class LaunchCommandBuilder
             { "library_directory" ,"\""+Path.Combine(basePath, "libraries")+"\""},
             { "classpath_separator" , separator.ToString()}
         };
+        loaderArgs = strategy?.GetAdditionalJvmArgs().Select(argument => Tools.ReplacePlaceholders(argument, placeholders)).ToArray() ?? [];
         // 处理1.13以前版本没有Arguments的情况
         if (versionInfo.info.Arguments == null)
         {
@@ -68,11 +69,7 @@ public partial class LaunchCommandBuilder
         }
         else
         {
-            List<string> jvmArgs = null;
-            if (strategy != null)
-                jvmArgs = strategy.GetAdditionalJvmArgs().ToList();
-            if (jvmArgs == null)
-                jvmArgs = new List<string>(versionInfo.info.Arguments.Jvm.Count);
+            List<string> jvmArgs = new(versionInfo.info.Arguments.Jvm.Count);
             foreach (var item in versionInfo.info.Arguments.Jvm)
             {
                 // 判断是规则套字符串还是简单字符串

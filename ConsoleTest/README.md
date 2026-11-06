@@ -40,3 +40,18 @@ dotnet ConsoleTest/bin/Debug/net10.0/ConsoleTest.dll --modpack-cleanup --output 
 ```
 
 该模式复用整合包侧栏回归夹具，不初始化实际启动器配置。包文件、解压目录、测试实例和截图均生成在输出目录内，检查取消或异常后清理临时文件与未完成的实例目录、登记保存失败回滚、重新下载重试、已有目录及成功实例保留，以及取消后保留最后的进度文字。
+
+## JVM 配置检查
+
+在仓库根目录运行 `dotnet ConsoleTest/bin/Debug/net10.0/ConsoleTest.dll --jvm-config`，离线检查预算、堆／GC 覆盖、运行时解析、UI 全量重建与保存失败回滚。此入口在真实启动器初始化之前执行，不读取账户和真实配置。
+
+追加 `--java "实际 java.exe 路径"` 可检查该运行时和小堆默认参数。夹具放入 `artifacts/jvm-config-20261106/` 随机子目录并在 finally 清理。未提供运行时只执行离线检查；检查参数可接受不代表游戏性能已测量。
+
+Windows Native AOT 可使用独立 JVM 检查入口，排除依赖 Debug 专用设置的历史集成用例；该入口只运行 JVM 检查，不初始化真实启动器：
+
+```powershell
+dotnet publish ConsoleTest/ConsoleTest.csproj -p:PublishProfile=WindowsAot -p:JvmConfigAotOnly=true --artifacts-path artifacts/jvm-aot-check -o artifacts/jvm-aot-check/publish
+& './artifacts/jvm-aot-check/publish/ConsoleTest.exe' --jvm-config --java '实际 java.exe 路径'
+```
+
+可重复指定 `--java` 检查多个运行时。JVM 检查直接访问 UI 的 internal 测试入口，避免依赖反射和裁剪保留；发布目录与构建输出在检查后清理。

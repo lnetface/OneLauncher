@@ -6,9 +6,17 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Release AOT JVM checks do not compile older integration fixtures that require Debug-only setters. -->
+  <PropertyGroup Condition="'$(JvmConfigAotOnly)' == 'true'">
+    <DefineConstants>$(DefineConstants);JVM_CONFIG_AOT</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(JvmConfigAotOnly)' == 'true'">
+    <Compile Remove="ServerDatChecks.cs;ForgeIntegrationTests.cs;ForgeProbeMod.cs;ForgeProtocolChecks.cs" />
+  </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
-    <PackageReference Include="Microsoft.NET.HostModel" Version="3.1.16" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.2" Condition="'$(JvmConfigAotOnly)' != 'true'" />
+    <PackageReference Include="Microsoft.NET.HostModel" Version="3.1.16" Condition="'$(JvmConfigAotOnly)' != 'true'" />
     <PackageReference Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
     <PackageReference Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
   </ItemGroup>
@@ -16,7 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\OneLauncher.Core\OneLauncher.Core.csproj" />
     <ProjectReference Include="..\OneLauncher\OneLauncher.csproj" />
-    <Compile Include="..\tests\OneLauncher.RegressionTests\ModpackUiChecks.cs" Link="ModpackUiChecks.cs" />
+    <Compile Include="..\tests\OneLauncher.RegressionTests\ModpackUiChecks.cs" Link="ModpackUiChecks.cs" Condition="'$(JvmConfigAotOnly)' != 'true'" />
     <None Update="ProbeMod.java" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

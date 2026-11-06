@@ -57,6 +57,8 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
     #region 启动参数优化选项
     [ObservableProperty]
     public bool isM1, isM2, isM3;
+    private readonly System.Threading.SemaphoreSlim _jvmSelectionLock = new(1, 1);
+    private bool _loadingJvmSelection;
     partial void OnIsM1Changed(bool value)
     {
         if (!value) return; // 避免在取消选中时也执行
@@ -65,8 +67,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
             return;
 #endif
         // 使用注入的实例
-        _dbManger.Data.DefaultSettings.MinecraftJvmArguments = JvmArguments.CreateFromMode(OptimizationMode.Conservative);
-        _dbManger.Save();
+        if (!_loadingJvmSelection) _ = SaveJvmModeAsync(OptimizationMode.Conservative);
     }
     partial void OnIsM2Changed(bool value)
     {
@@ -76,8 +77,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
             return;
 #endif
         // 使用注入的实例
-        _dbManger.Data.DefaultSettings.MinecraftJvmArguments = JvmArguments.CreateFromMode(OptimizationMode.Standard);
-        _dbManger.Save();
+        if (!_loadingJvmSelection) _ = SaveJvmModeAsync(OptimizationMode.Standard);
     }
     partial void OnIsM3Changed(bool value)
     {
@@ -87,8 +87,50 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
             return;
 #endif
         // 使用注入的实例
-        _dbManger.Data.DefaultSettings.MinecraftJvmArguments = JvmArguments.CreateFromMode(OptimizationMode.Aggressive);
-        _dbManger.Save();
+        if (!_loadingJvmSelection) _ = SaveJvmModeAsync(OptimizationMode.Aggressive);
+    }
+
+    private async Task SaveJvmModeAsync(OptimizationMode mode)
+    {
+        await _jvmSelectionLock.WaitAsync();
+        try
+        {
+            await ReplaceJvmPresetAsync(_dbManger.Data.DefaultSettings, mode, () => _dbManger.Save());
+        }
+        catch (Exception ex)
+        {
+            await OlanExceptionWorker.ForOlanException(ex as OlanException ?? new OlanException("无法保存 JVM 配置", ex.Message, OlanExceptionAction.Error, ex));
+        }
+        finally
+        {
+            LoadJvmSelection(_dbManger.Data.DefaultSettings.MinecraftJvmArguments.mode);
+            _jvmSelectionLock.Release();
+        }
+    }
+
+    /// <summary>用户切换时整份替换，保存失败恢复原对象，不合并手工编辑字段。</summary>
+    internal static async Task ReplaceJvmPresetAsync(DefaultConfig settings, OptimizationMode mode, Func<Task> save)
+    {
+        var previous = settings.MinecraftJvmArguments;
+        settings.MinecraftJvmArguments = JvmArguments.CreateFromMode(mode);
+        try { await save(); }
+        catch
+        {
+            settings.MinecraftJvmArguments = previous;
+            throw;
+        }
+    }
+
+    private void LoadJvmSelection(OptimizationMode mode)
+    {
+        _loadingJvmSelection = true;
+        try
+        {
+            IsM1 = mode == OptimizationMode.Conservative;
+            IsM2 = mode == OptimizationMode.Standard;
+            IsM3 = mode == OptimizationMode.Aggressive;
+        }
+        finally { _loadingJvmSelection = false; }
     }
     [RelayCommand]
     private void ReleaseMemory()
@@ -651,18 +693,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
             RefreshHomeLaunchItems();
             _dbManger.OnDataChanged += () => RefreshHomeLaunchItems();
             _gameDataManager.OnDataChanged += () => RefreshHomeLaunchItems();
-            switch (_dbManger.Data.DefaultSettings.MinecraftJvmArguments.mode)
-            {
-                case OptimizationMode.Conservative:
-                    IsM1 = true;
-                    break;
-                case OptimizationMode.Standard:
-                    IsM2 = true;
-                    break;
-                case OptimizationMode.Aggressive:
-                    IsM3 = true;
-                    break;
-            }
+            LoadJvmSelection(_dbManger.Data.DefaultSettings.MinecraftJvmArguments.mode);
             MaxDownloadThreadsValue = _dbManger.Data.OlanSettings.MaximumDownloadThreads;
             MaxSha1ThreadsValue = _dbManger.Data.OlanSettings.MaximumSha1Threads;
             IsSha1Enabled = _dbManger.Data.OlanSettings.IsSha1Enabled;
