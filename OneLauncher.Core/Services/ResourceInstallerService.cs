@@ -5,6 +5,7 @@ using OneLauncher.Core.DefaultComponent.Resource.Pack;
 using OneLauncher.Core.DefaultComponent.Downloader.DownloadMinecraftProviders;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Helper.Models;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.AutoInformation.RecommededMods;
 
 namespace OneLauncher.Core.Services;
 
@@ -13,7 +14,13 @@ public sealed class ResourceInstallerService
     internal ResourceInstallerService()
     {
     }
-
+    public Task InstallRecommendedMods(IProgress<(int current,string file)> progress, GameData data,ModLimited limited,CancellationToken token)
+    {
+        return new RecommendedModInstaller(data,limited).InstallAsync(new Progress<(int c,string f)>(p =>
+        {
+            progress?.Report((p.c, p.f));
+        }),token);
+    }
     /// <summary>获取最新 .mrpack 的网络流并解析信息；调用方负责释放返回值。</summary>
     public Task<ModpackDownload> GetModpackInfoAsync(string projectId, CancellationToken cancellationToken = default)
     {

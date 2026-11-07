@@ -1,5 +1,22 @@
 # Forge / NeoForge 串行集成测试
 
+新增游戏数据前端的离线检查：
+
+```powershell
+dotnet build ConsoleTest/ConsoleTest.csproj
+dotnet ConsoleTest/bin/Debug/net10.0/ConsoleTest.dll --game-data-ui --output artifacts/game-data-ui-check
+```
+
+输出目录必须是工作区内尚不存在的新目录。该模式不初始化真实启动器配置，也不访问 Modrinth，验证账户选项与 JSON 持久化、编辑初始化不保存、加载器与复选框绑定、后台任务创建及提前取消时保留实例。夹具会自动清理，截图保留供检查；检查完请删除本次指定的输出目录。该检查需使用 Debug 构建。
+
+推荐模组空下载信息的离线检查：
+
+```powershell
+dotnet ConsoleTest/bin/Debug/net10.0/ConsoleTest.dll --recommended-mods
+```
+
+使用模拟 HTTP 响应验证正常项目、项目不存在和没有兼容版本时的下载收集、实际游戏版本查询和实例安装路径，并验证重复推荐项和共同依赖按最终路径只下载一次。该模式不联网、不初始化真实配置，工作区内夹具自动清理，需使用 Debug 构建。
+
 在仓库根目录构建并运行：
 
 ```powershell

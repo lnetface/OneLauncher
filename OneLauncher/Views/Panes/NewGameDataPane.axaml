@@ -56,25 +56,32 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Classes="pane-label" Text="默认用户" Margin="0,8,0,0"/>
-                        <ComboBox Classes="pane-field" ItemsSource="{Binding AvailableUsers}"
-                                  SelectedItem="{Binding SelectedUser}"
+                        <TextBlock Classes="pane-label" Text="默认登录账户" Margin="0,8,0,0"/>
+                        <ComboBox Classes="pane-field" ItemsSource="{Binding AvailableAccounts}"
+                                  SelectedItem="{Binding SelectedAccount, Mode=TwoWay}"
                                   IsEnabled="{Binding SelectedBaseVersion, Converter={x:Static ObjectConverters.IsNotNull}}">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="lo:UserModel">
-                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-                                        <controls:ThemeIcon Width="20" Height="20" VerticalAlignment="Center"
-                                                            IconKey="{Binding UserType, Converter={StaticResource UiOptionConverter}, ConverterParameter=Icon}"/>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding UserType, Converter={StaticResource UiOptionConverter}}"
-                                                       FontSize="11" TextTrimming="CharacterEllipsis"
-                                                       Foreground="{DynamicResource SecondaryForegroundBrush}"/>
-                                        </StackPanel>
-                                    </Grid>
+                                <DataTemplate x:DataType="vm:GameDataAccountOption">
+                                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
+                        <TextBlock Classes="pane-help"
+                                   Text="选择全局默认账户后，启动时使用设置中的默认账户。"/>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="pane-section-title" Text="工具"/>
+                <Border Classes="pane-surface">
+                    <StackPanel Spacing="8">
+                        <CheckBox Content="一键安装所有推荐模组"
+                                  IsChecked="{Binding InstallRecommendedMods, Mode=TwoWay}"
+                                  IsEnabled="{Binding CanInstallRecommendedMods}"/>
+                        <TextBlock Classes="pane-help"
+                                   Text="创建完成后会在后台从 Modrinth 下载适配当前加载器和版本的推荐模组，可在任务列表查看进度或取消安装。"/>
+                        <TextBlock Classes="pane-help"
+                                   IsVisible="{Binding !CanInstallRecommendedMods}"
+                                   Text="请先选择 Fabric、Quilt、Forge 或 NeoForge 加载器，再启用推荐模组安装。"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

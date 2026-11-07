@@ -1,4 +1,5 @@
 ﻿using OneLauncher.Core.DefaultComponent.Mod.ModService.Modrinth;
+using OneLauncher.Core.Global;
 using OneLauncher.Core.Helper.Models;
 using System.Diagnostics;
 using System.Text.Json;
@@ -26,7 +27,8 @@ public class GetModrinth
         var Url = $"https://api.modrinth.com/v2/project/{ModID}/version?game_versions=[\"{version}\"]&loaders=[\"{modType.ToString()}\"]";
         Debug.WriteLine($"[OneLauncher.Core.DefaultComponent.Mod.ModService.Modrinth.GetModrinth.Init] 正在请求{Url}");
         using HttpResponseMessage response = await client.GetAsync(Url, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            throw new OlanException("找不到模组","模组安装失败",OlanExceptionAction.Warning);
 
         try
         {

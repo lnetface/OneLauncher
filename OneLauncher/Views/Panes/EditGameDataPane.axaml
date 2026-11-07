@@ -5,7 +5,6 @@
              xmlns:vm="using:OneLauncher.Views.Panes.PaneViewModels"
              xmlns:controls="using:OneLauncher.Views.Controls"
              xmlns:gdm="using:OneLauncher.Core.Global.ModelDataMangers"
-             xmlns:models="using:OneLauncher.Core.Helper.Models"
              x:Class="OneLauncher.Views.Panes.EditGameDataPane"
              x:DataType="vm:EditGameDataPaneViewModel"
              x:CompileBindings="True"
@@ -36,13 +35,14 @@
                         <TextBox Classes="pane-field" Text="{Binding InstanceName}"/>
                         <TextBlock Classes="pane-label" Text="默认登录用户" Margin="0,8,0,0"/>
                         <ComboBox Classes="pane-field" PlaceholderText="选择默认登录用户"
-                                  ItemsSource="{Binding AvailableUsers}" SelectedItem="{Binding SelectedUser}">
+                                  ItemsSource="{Binding AvailableAccounts}" SelectedItem="{Binding SelectedAccount, Mode=TwoWay}">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="models:UserModel">
-                                    <TextBlock Text="{Binding Name}"/>
+                                <DataTemplate x:DataType="vm:GameDataAccountOption">
+                                    <TextBlock Text="{Binding DisplayName}"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
+                        <TextBlock Classes="pane-help" Text="选择全局默认账户后，启动时使用设置中的默认账户。"/>
                         <TextBlock Classes="pane-label" Text="标签" Margin="0,8,0,0"/>
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                             <ComboBox Classes="pane-field" PlaceholderText="选择可用标签"

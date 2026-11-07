@@ -33,7 +33,7 @@ internal sealed class GameLauncher : IDisposable
         // 先把令牌刷新了
         progress?.Report(("正在刷新登录账户...", 25));
         cancellationToken.ThrowIfCancellationRequested();
-        UserModel user = UnitedCore.Core.AccountManager.GetUser(gameData.DefaultUserModelID) ?? UnitedCore.Core.AccountManager.GetDefaultUser();
+        UserModel user = gameData.GetUserModel();
         Task resh =
             user.IntelligentLogin(UnitedCore.Core.MsalAuthenticator);
         progress?.Report(("正在读取游戏版本信息...", 35));
@@ -45,7 +45,7 @@ internal sealed class GameLauncher : IDisposable
         progress?.Report(("正在配置游戏目录和启动参数...", 45));
         var launchGamePath = useRootMode ? gameRootPath : gameData.InstancePath;
         commandBuilder
-            .SetLoginUser(accountManager.GetUser(gameData.DefaultUserModelID) ?? throw new OlanException("启动失败","找不到你想要启动的用户"))
+            .SetLoginUser(gameData.GetUserModel())
             .WithServerInfo(serverInfo)
             .SetGamePath(launchGamePath)
             .SetModType(gameData.ModLoader);

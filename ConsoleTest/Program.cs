@@ -6,12 +6,27 @@ using OneLauncher.Core.Global;
 
 try
 {
+    if (args.Contains("--json-aot")) return await JsonAotChecks.RunAsync();
 #if JVM_CONFIG_AOT
     return await JvmOptimizationChecks.RunAsync(args);
 #else
     if (args.Contains("--jvm-config")) return await JvmOptimizationChecks.RunAsync(args);
     if (args.Contains("--server-dat")) return await ServerDatChecks.RunAsync();
     if (args.Contains("--protocol")) return await ForgeProtocolChecks.RunAsync();
+    if (args.Contains("--recommended-mods")) return await RecommendedModsChecks.RunAsync();
+    if (args.Contains("--game-data-ui"))
+    {
+        int outputIndex = Array.IndexOf(args, "--output");
+        var output = outputIndex >= 0 && outputIndex + 1 < args.Length
+            ? args[outputIndex + 1] : "artifacts/game-data-ui-20261108";
+        AppBuilder.Configure<OneLauncher.App>().UseSkia()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+            .SetupWithoutStarting();
+        var checks = GameDataUiChecks.RunAsync(output);
+        while (!checks.IsCompleted) Dispatcher.UIThread.RunJobs();
+        await checks;
+        return 0;
+    }
     if (args.Contains("--modpack-cleanup"))
     {
         int outputIndex = Array.IndexOf(args, "--output");

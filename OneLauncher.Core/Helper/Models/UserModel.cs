@@ -104,7 +104,7 @@ public class UserModel
     /// 检查自身令牌是否过期，如果过期则尝试刷新，并返回一个包含最新状态的新实例。
     /// </summary>
     /// <returns>
-    /// 【警告】此方法返回一个新的实例，而不是修改我自己
+    /// 【警告】此方法返回一个新的实例，同时修改我自己
     /// </returns>
     public async Task<UserModel> IntelligentLogin(MsalAuthenticator authenticator)
     {
@@ -162,7 +162,6 @@ public class UserModel
             return this;
         }
     }
-
     public override string ToString()
     {
         return UserType switch

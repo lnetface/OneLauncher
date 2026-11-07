@@ -17,17 +17,31 @@ public class GameData
     public string VersionId { get; set; }
     public ModEnum ModLoader { get; set; }
     public DateTime CreationTime { get; set; }
-    public Guid DefaultUserModelID { get; set; }
+    public Guid? DefaultUserModelID { get; set; }
     [JsonIgnore]
     public string InstanceId { get; set; }
     // 自定义一些参数
     public JvmArguments? CustomJvmOptimizationArguments { get; set; }
     public string? ExtraJvmArguments { get; set; }
     public string? CustomGameArguments { get; set; }
+    /// <summary>
+    /// 【只在游戏启动时调用返回自身】
+    /// 为了保证内部无默认用户参数调用全局默认的逻辑
+    /// </summary>
+    /// <returns>可用的用户模型</returns>
+    public UserModel GetUserModel()
+    {
+        if (this.DefaultUserModelID != null)
+            return UnitedCore.Core.AccountManager.GetUser(this.DefaultUserModelID.Value)
+                ?? throw new OlanException("内部启动操作失败", "找不到对应的账户");
+        else
+            return UnitedCore.Core.AccountManager.GetDefaultUser();
+    }
+    #region 构造函数
     [JsonIgnore]
     public string InstancePath => Path.Combine(Init.GameRootPath, "instance", InstanceId);
     [JsonConstructor]
-    public GameData(string name, string versionId, ModEnum modLoader, Guid defaultUserModelID,
+    public GameData(string name, string versionId, ModEnum modLoader, Guid? defaultUserModelID,
                     DateTime creationTime,  JvmArguments? customJvmOptimizationArguments,
                     string? extraJvmArguments, string? customGameArguments) 
     {
@@ -45,10 +59,11 @@ public class GameData
         Name = name;
         VersionId = versionId;
         ModLoader = loader;
-        DefaultUserModelID = userModel ?? UnitedCore.Core.AccountManager.GetDefaultUser().UserID;
+        DefaultUserModelID = userModel;
         CreationTime = DateTime.Now;
         InstanceId = Guid.NewGuid().ToString()[..8]; // 避免路径过长
     }
+    #endregion
     public override string ToString()
         => Name;
 }

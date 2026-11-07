@@ -29,6 +29,7 @@ internal partial class EditGameDataPaneViewModel : BaseViewModel, IPaneHost
     private readonly GameDataManager _gameDataManager;
     private readonly AccountManager _accountManager;
     private readonly GameData editingGameData;
+    private bool _isInitializing = true;
     public Action OnPaneClose { get; init; } = () => { };
     [ObservableProperty] private string instanceName;
     [ObservableProperty] private Bitmap currentIcon;
@@ -54,16 +55,12 @@ internal partial class EditGameDataPaneViewModel : BaseViewModel, IPaneHost
             SelectedTag = null;
         else SelectedTag = 
             _gameDataManager.Data.Tags.GetValueOrDefault((Guid)tagId); // 找到标签
-        AvailableUsers = _accountManager.GetAllUsers().ToList();
-        SelectedUser = _accountManager.GetUser(editingGameData.DefaultUserModelID);
-        if (SelectedUser == null)
-        {
-            // 如果用户神奇消失了，则帮他回退到默认用户
-            SelectedUser = _accountManager.GetDefaultUser();
-            editingGameData.DefaultUserModelID = SelectedUser.UserID;
-        }
+        AvailableAccounts = GameDataAccountOption.Build(_accountManager.GetAllUsers());
+        SelectedAccount = AvailableAccounts.FirstOrDefault(
+            account => account.UserId == editingGameData.DefaultUserModelID) ?? AvailableAccounts[0];
 
         CurrentIcon = GameDataItem.GetGameDataIcon(gameData);
+        _isInitializing = false;
     }
 
     private void UpdateGameData()
@@ -81,13 +78,13 @@ internal partial class EditGameDataPaneViewModel : BaseViewModel, IPaneHost
         }
     }
     #region 默认登入用户选项
-    [ObservableProperty] List<UserModel> availableUsers;
-    [ObservableProperty] UserModel? selectedUser;
-    partial void OnSelectedUserChanged(UserModel? value)
+    public List<GameDataAccountOption> AvailableAccounts { get; }
+    [ObservableProperty] private GameDataAccountOption? selectedAccount;
+    partial void OnSelectedAccountChanged(GameDataAccountOption? value)
     {
-        if (value == null)
+        if (_isInitializing)
             return;
-        editingGameData.DefaultUserModelID = SelectedUser!.UserID;
+        editingGameData.DefaultUserModelID = value?.UserId;
         _=_gameDataManager.Save(); 
     }
     #endregion
@@ -102,7 +99,7 @@ internal partial class EditGameDataPaneViewModel : BaseViewModel, IPaneHost
     }
     partial void OnSelectedTagChanged(GameDataTag? value)
     {
-        if (value == null)
+        if (_isInitializing || value == null)
             return;
         _=_gameDataManager.SetTagForInstance(Id, SelectedTag.ID);
     }
@@ -241,6 +238,7 @@ internal partial class EditGameDataPaneViewModel : BaseViewModel, IPaneHost
     private void Save()
     {
         editingGameData.Name = InstanceName;
+        editingGameData.DefaultUserModelID = SelectedAccount?.UserId;
         //_gameDataManager.Data.Instances.GetValueOrDefault(editingGameData.InstanceId);
         if (SelectedTag != null)
             _gameDataManager.SetTagForInstance(editingGameData.InstanceId, SelectedTag.ID);
