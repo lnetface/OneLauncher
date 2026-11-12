@@ -2,6 +2,8 @@
 
 轻量、快速、少配置的 Minecraft 启动器。
 
+注：[原地址](https://github.com/zhweaa/OneLauncher)被封，故迁移至此
+
 ## Windows 一键安装
 
 在 Windows PowerShell 中运行：
@@ -87,3 +89,4 @@ UI 规范见 [`docs/UI_FI.md`](docs/UI_FI.md)，架构说明见 [`Welcome.md`](W
 OneLauncher 与 Mojang、Microsoft 或 Minecraft 官方没有从属关系。更多法律信息见 [`Terms_of_Service.md`](Terms_of_Service.md) 和 [`Privacy_Policy.md`](Privacy_Policy.md)。
 
 欢迎联系作者讨论问题或提交 Issue：QQ `1826379500`。
+欢迎添加启动器和服务器交流群 QQ `897655022`
