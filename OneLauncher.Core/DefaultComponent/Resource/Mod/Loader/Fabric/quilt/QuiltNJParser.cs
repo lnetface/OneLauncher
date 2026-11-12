@@ -84,11 +84,15 @@ public class QuiltNJParser
             dowItems.Add(new NdDowItem(url, fullPath, item.Size, item.Sha1));
         }
 
-        // 统一处理3个核心库：loader, intermediary, hashed
+        // Loader 必需；intermediary 和 hashed 在部分版本元数据中为空。
         // 使用一个辅助函数来减少重复代码
         Action<string, string> addCoreLibrary = (mavenName, baseUrl) =>
         {
+            if (string.IsNullOrWhiteSpace(mavenName))
+                throw new OlanException("Quilt 元数据无效", $"生成 Quilt 库下载信息；游戏根目录={basePath}。核心库缺少 Maven 坐标。");
             var parts = mavenName.Split(':');
+            if (parts.Length != 3 || parts.Any(string.IsNullOrWhiteSpace))
+                throw new OlanException("Quilt 元数据无效", $"生成 Quilt 库下载信息；Maven 坐标={mavenName}；游戏根目录={basePath}。预期格式为 groupId:artifactId:version。");
             var groupId = parts[0];
             var artifactId = parts[1];
             var version = parts[2];
@@ -106,13 +110,13 @@ public class QuiltNJParser
         // 添加 Quilt Loader (来自 Quilt 源)
         addCoreLibrary(info.Loader.DownName, quiltBaseUrl);
 
-        // [!code focus-start]
-        // 添加 Intermediary (来自 Fabric 源) - 这是关键的修复
-        addCoreLibrary(info.Intermediary.DownName, fabricBaseUrl);
-        // [!code focus-end]
+        // 有映射元数据时保留旧版本的库依赖；没有时无需下载映射库。
+        if (info.Intermediary is { } intermediary)
+            addCoreLibrary(intermediary.DownName, fabricBaseUrl);
 
         // 添加 Quilt Hashed (来自 Quilt 源)
-        addCoreLibrary(info.QuiltHashed.DownName, quiltBaseUrl);
+        if (info.QuiltHashed is { } hashed)
+            addCoreLibrary(hashed.DownName, quiltBaseUrl);
 
         return dowItems;
     }
@@ -125,7 +129,7 @@ public class QuiltNJParser
     {
         var libraries = new Dictionary<string, string>(info.LauncherMeta.Libraries.Common.Count + 3);
 
-        Action<string> addLibrary = (mavenName) =>
+        Action<string?> addLibrary = (mavenName) =>
         {
             if (string.IsNullOrEmpty(mavenName)) return;
             var parts = mavenName.Split(':');
@@ -149,8 +153,8 @@ public class QuiltNJParser
 
         info.LauncherMeta.Libraries.Common.ForEach(lib => addLibrary(lib.Name));
         addLibrary(info.Loader.DownName);
-        addLibrary(info.Intermediary.DownName);
-        addLibrary(info.QuiltHashed.DownName);
+        addLibrary(info.Intermediary?.DownName);
+        addLibrary(info.QuiltHashed?.DownName);
 
         return libraries;
     }

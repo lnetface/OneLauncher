@@ -200,8 +200,12 @@ internal partial class Download : IDisposable
 
         try
         {
+            // 不同加载器或下载地址可能指向同一个本地文件，只下载一次。
+            var uniqueDownloads = downloadNds.DistinctBy(
+                item => Path.GetFullPath(item.path),
+                OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
             await Parallel.ForEachAsync(
-                downloadNds,
+                uniqueDownloads,
                 new ParallelOptions
                 {
                     MaxDegreeOfParallelism = maxConcurrentDownloads,
@@ -278,7 +282,8 @@ internal partial class Download : IDisposable
         }
     }
 
-    private static string GetTemporaryDownloadPath(string savepath) => $"{savepath}.downloading";
+    // 不同安装任务也可能下载同一目标；每次请求只写入和清理自己的临时文件。
+    internal static string GetTemporaryDownloadPath(string savepath) => $"{savepath}.{Guid.NewGuid():N}.downloading";
 
     private static void DeleteTemporaryDownload(string path)
     {

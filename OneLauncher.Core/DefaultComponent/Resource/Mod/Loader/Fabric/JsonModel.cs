@@ -16,11 +16,11 @@ public class FabricRoot
     public FabricLoader Loader { get; set; }
 
     [JsonPropertyName("intermediary")]
-    public FabricIntermediary Intermediary { get; set; }
+    public FabricIntermediary? Intermediary { get; set; }
     [JsonPropertyName("launcherMeta")]
     public FabricLauncherMeta LauncherMeta { get; set; }
     [JsonPropertyName("hashed")]
-    public QuiltHashed QuiltHashed { get; set; }
+    public QuiltHashed? QuiltHashed { get; set; }
 }
 public class FabricLoader
 {

@@ -85,6 +85,10 @@ internal partial class DownloadMinecraft
                 modFiles.AddRange(dependencies);
                 allFiles.AddRange(dependencies);
             }
+        // Fabric、Quilt 等加载器共享依赖，按实际保存路径去重，保持下载计数一致。
+        var pathComparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        modFiles = modFiles.DistinctBy(item => Path.GetFullPath(item.path), pathComparer).ToList();
+        allFiles = allFiles.DistinctBy(item => Path.GetFullPath(item.path), pathComparer).ToList();
         // 经测试，对于已存在的游戏部分应该对client文件进行校验，尤其是游戏运行时会报错无权访问
         // 校验通过则跳过写入；不通过则保留下载项，按损坏文件重新下载。
         if (File.Exists(clientFile.Value.path)

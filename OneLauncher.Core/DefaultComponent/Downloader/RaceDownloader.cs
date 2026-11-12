@@ -192,7 +192,7 @@ internal class RaceDownloader
         CancellationToken cancelToken)
     {
         // 不包含SHA1校验
-        string temporaryPath = $"{main.path}.downloading";
+        string temporaryPath = Download.GetTemporaryDownloadPath(main.path);
         try
         {
             using var contentStream = await response.Content.ReadAsStreamAsync();
