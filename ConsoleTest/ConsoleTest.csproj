@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -22,10 +22,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="agent_test/**/*.cs" />
+    <EmbeddedResource Remove="agent_test/**/*" />
+    <None Remove="agent_test/**/*" />
     <ProjectReference Include="..\OneLauncher.Core\OneLauncher.Core.csproj" />
     <ProjectReference Include="..\OneLauncher\OneLauncher.csproj" />
-    <Compile Include="..\tests\OneLauncher.RegressionTests\ModpackUiChecks.cs" Link="ModpackUiChecks.cs" Condition="'$(JvmConfigAotOnly)' != 'true'" />
-    <None Update="ProbeMod.java" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="agent_test\OneLauncher.RegressionTests\" />
   </ItemGroup>
 
 </Project>

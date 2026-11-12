@@ -1,4 +1,4 @@
-﻿using OneLauncher.Core.DefaultComponent.Resource.ModService.Modrinth;
+using OneLauncher.Core.DefaultComponent.Resource.ModService.Modrinth;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Helper.Models;
 using System;
@@ -8,38 +8,19 @@ using System.Text;
 namespace OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.AutoInformation.RecommededMods;
 internal class RecommendedModInstaller
 {
-    internal RecommendedModInstaller(GameData gameData, ModLimited limited)
+    internal RecommendedModInstaller(GameData gameData)
     {
         this.gameData = gameData;
-        this.limited = limited;
         mods = Init.ConfigManager.Data.DefaultSettings.RecommandedMods;
     }
     private readonly GameData gameData;
-    private readonly ModLimited limited;
-    private readonly List<RecommendedMod> mods;
+    private readonly List<string> mods;
     internal async Task InstallAsync(IProgress<(int current,string file)> progress,CancellationToken token = default)
     {
         var modsGetterServices = mods
-            .Where(x =>
-            {
-                bool b1 = false, b2 = false;
-                var v1 = new Version(gameData.VersionId);
-                var v2 = new Version(limited.minecraftVersion);
-                if(v1 >= v2)
-                    if (limited.operation == Than.GreaterThan)
-                        b1 = true;
-                if (v2 >= v1)
-                    if (limited.operation == Than.LessThan)
-                        b1 = true;
-                b2 = limited.modLoader == gameData.ModLoader;
-                if(b1 && b2)
-                    return true;
-                else
-                    return false;
-            })
             .Select(mod => 
                 new GetModrinth(
-                    mod.ModId, 
+                    mod,
                     gameData.VersionId, 
                     gameData.ModLoader, 
                     Path.Combine(gameData.InstancePath, "mods")))

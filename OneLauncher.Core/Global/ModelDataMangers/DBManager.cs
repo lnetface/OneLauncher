@@ -1,11 +1,13 @@
-﻿using OneLauncher.Core.DefaultComponent.Downloader.DownloadMinecraftProviders;
+using OneLauncher.Core.DefaultComponent.Downloader.DownloadMinecraftProviders;
 using OneLauncher.Core.Helper.Models;
 using OneLauncher.Core.DefaultComponent.Server;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Web;
 using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.AutoInformation.RecommededMods;
+using System.Collections.Generic;
 
 namespace OneLauncher.Core.Global.ModelDataMangers;
 [JsonSerializable(typeof(JvmArguments))]
@@ -30,408 +32,116 @@ public class DefaultConfig
     public string CrafatarUrl { get; set; } = "http://106.55.4.15:18792/renders/body/";
     public string? ApiKey { get; set; } = null;
     #region 推荐模组
-    public List<RecommendedMod> RecommandedMods { get; set; } =
+    [JsonConverter(typeof(RecommendedModListConverter))]
+    public List<string> RecommandedMods { get; set; } =
     [
         // Animatica Refabricated — animaticarefabricated
-        new RecommendedMod("xEyZuswh", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.21.8", Than.GreaterThan)),
-    new RecommendedMod("xEyZuswh", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "26.1", Than.GreaterThan)),
-    // Better Block Entities — better-block-entities
-    new RecommendedMod("ONZm0H7Y", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Better Mount HUD — better-mount-hud
-    new RecommendedMod("kqJFAPU9", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.17", Than.GreaterThan)),
-    // Cloth Config API — cloth-config
-    new RecommendedMod("9s6osm5g", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.14", Than.GreaterThan)),
-    new RecommendedMod("9s6osm5g", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20.2", Than.GreaterThan)),
-    // Config Manager — configmanager
-    new RecommendedMod("jlNms3Jp", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.20", Than.GreaterThan)),
-    new RecommendedMod("jlNms3Jp", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Continuity — continuity
-    new RecommendedMod("1IjD5062", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.17.1", Than.GreaterThan)),
-    new RecommendedMod("1IjD5062", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("1IjD5062", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.20.1", Than.GreaterThan)),
-    new RecommendedMod("1IjD5062", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21.1", Than.GreaterThan)),
-    // Controlify (Controller support) — controlify
-    new RecommendedMod("DOUdJVEm", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.19.4", Than.GreaterThan)),
-    new RecommendedMod("DOUdJVEm", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20.3", Than.GreaterThan)),
-    // Crash Assistant — crash-assistant
-    new RecommendedMod("ix1qq8Ux", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.14.4", Than.GreaterThan)),
-    new RecommendedMod("ix1qq8Ux", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.19", Than.GreaterThan)),
-    new RecommendedMod("ix1qq8Ux", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.6.4", Than.GreaterThan)),
-    new RecommendedMod("ix1qq8Ux", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.7.10", Than.GreaterThan)),
-    // Debugify — debugify
-    new RecommendedMod("QwxR6Gcd", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = true, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    // Dynamic FPS — dynamic-fps
-    new RecommendedMod("LQ3K71Q1", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.14.3", Than.GreaterThan)),
-    new RecommendedMod("LQ3K71Q1", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("LQ3K71Q1", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20.2", Than.GreaterThan)),
-    // Dynamic Surroundings — dynamicsurroundingsfabric
-    new RecommendedMod("H7fshfpD", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.17.1", Than.GreaterThan)),
-    new RecommendedMod("H7fshfpD", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21.1", Than.GreaterThan)),
-    // e4mc — e4mc
-    new RecommendedMod("qANg5Jrr", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = true, IsNeoForge = false },
-        "1.17", Than.GreaterThan)),
-    new RecommendedMod("qANg5Jrr", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.18", Than.GreaterThan)),
-    // Embeddium — embeddium
-    new RecommendedMod("sk9rgfiA", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("sk9rgfiA", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20.1", Than.GreaterThan)),
-    // [EMF] Entity Model Features — entity-model-features
-    new RecommendedMod("4I1XuqiY", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = true, IsNeoForge = true },
-        "1.18.2", Than.GreaterThan)),
-    // Entity Culling — entityculling
-    new RecommendedMod("NNAgCjsB", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.16", Than.GreaterThan)),
-    new RecommendedMod("NNAgCjsB", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.20", Than.GreaterThan)),
-    new RecommendedMod("NNAgCjsB", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20.2", Than.GreaterThan)),
-    new RecommendedMod("NNAgCjsB", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.7.10", Than.GreaterThan)),
-    // [ETF] Entity Texture Features — entitytexturefeatures
-    new RecommendedMod("BVzZfTc1", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = true, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("BVzZfTc1", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.18.2", Than.GreaterThan)),
-    // Fabric API — fabric-api
-    new RecommendedMod("P7dR8mSH", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.14", Than.GreaterThan)),
-    // Fabric Language Kotlin — fabric-language-kotlin
-    new RecommendedMod("Ha28R6CL", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.14", Than.GreaterThan)),
-    // FastQuit — fastquit
-    new RecommendedMod("x1hIzbuY", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.17", Than.GreaterThan)),
-    // FerriteCore — ferrite-core
-    new RecommendedMod("uXXizFIs", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("uXXizFIs", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("uXXizFIs", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20", Than.GreaterThan)),
-    // Forge Config API Port — forge-config-api-port
-    new RecommendedMod("ohNO6lps", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.16", Than.GreaterThan)),
-    new RecommendedMod("ohNO6lps", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = true },
-        "1.20.2", Than.GreaterThan)),
-    // IMBlocker — imblocker-original
-    new RecommendedMod("WMDesFsZ", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("WMDesFsZ", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.17", Than.GreaterThan)),
-    new RecommendedMod("WMDesFsZ", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20.6", Than.GreaterThan)),
-    // ImmediatelyFast — immediatelyfast
-    new RecommendedMod("5ZwdcRci", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("5ZwdcRci", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.19", Than.GreaterThan)),
-    new RecommendedMod("5ZwdcRci", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20", Than.GreaterThan)),
-    // Iris Shaders — iris
-    new RecommendedMod("YL57xq9U", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("YL57xq9U", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Ixeris — ixeris
-    new RecommendedMod("p8RJPJIC", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = true, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("p8RJPJIC", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Just Enough Items (JEI) — jei
-    new RecommendedMod("u6dRKJwZ", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("u6dRKJwZ", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20.4", Than.GreaterThan)),
-    new RecommendedMod("u6dRKJwZ", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.8", Than.GreaterThan)),
-    // LambDynamicLights - Dynamic Lights — lambdynamiclights
-    new RecommendedMod("yBW8D80W", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.16.2", Than.GreaterThan)),
-    new RecommendedMod("yBW8D80W", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.17", Than.GreaterThan)),
-    new RecommendedMod("yBW8D80W", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Language Reload — language-reload
-    new RecommendedMod("uLbm7CG6", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.17.1", Than.GreaterThan)),
-    new RecommendedMod("uLbm7CG6", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.19", Than.GreaterThan)),
-    // Lithium — lithium
-    new RecommendedMod("gvQqBUqZ", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.16.2", Than.GreaterThan)),
-    new RecommendedMod("gvQqBUqZ", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.20.1", Than.GreaterThan)),
-    new RecommendedMod("gvQqBUqZ", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Main Menu Credits — main-menu-credits
-    new RecommendedMod("qJDfP7WN", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("qJDfP7WN", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "26.2", Than.GreaterThan)),
-    // MixinTrace Reborn — mixintrace-reborn
-    new RecommendedMod("Ok6FyXJ9", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.18", Than.GreaterThan)),
-    new RecommendedMod("Ok6FyXJ9", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20.5", Than.GreaterThan)),
-    // ModernFix — modernfix
-    new RecommendedMod("nmDcB62a", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.16.4", Than.GreaterThan)),
-    new RecommendedMod("nmDcB62a", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20.1", Than.GreaterThan)),
-    // ModernFix-mVUS — modernfix-mvus
-    new RecommendedMod("TjSm1wrD", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21.5", Than.GreaterThan)),
-    // Mod Menu — modmenu
-    new RecommendedMod("mOgUt4GM", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.14.4", Than.GreaterThan)),
-    new RecommendedMod("mOgUt4GM", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    // More Chat History — morechathistory
-    new RecommendedMod("8qkXwOnk", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("8qkXwOnk", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18", Than.GreaterThan)),
-    // More Culling — moreculling
-    new RecommendedMod("51shyZVL", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.18", Than.GreaterThan)),
-    new RecommendedMod("51shyZVL", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("51shyZVL", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // No Chat Reports — no-chat-reports
-    new RecommendedMod("qQyHxfxd", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = true, IsNeoForge = false },
-        "1.19", Than.GreaterThan)),
-    new RecommendedMod("qQyHxfxd", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20", Than.GreaterThan)),
-    // OptiGUI — optigui
-    new RecommendedMod("JuksLGBQ", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18", Than.GreaterThan)),
-    // Paginated Advancements & Custom Frames — paginatedadvancements
-    new RecommendedMod("pJogNFap", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.18.1", Than.GreaterThan)),
-    new RecommendedMod("pJogNFap", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.19", Than.GreaterThan)),
-    new RecommendedMod("pJogNFap", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21.6", Than.GreaterThan)),
-    // Text Placeholder API — placeholder-api
-    new RecommendedMod("eXts2L7r", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.17", Than.GreaterThan)),
-    // Polytone — polytone
-    new RecommendedMod("3qAYkBMB", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("3qAYkBMB", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.19.2", Than.GreaterThan)),
-    // Puzzle — puzzle
-    new RecommendedMod("3IuO68q1", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18", Than.GreaterThan)),
-    new RecommendedMod("3IuO68q1", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Quilted Fabric API (QFAPI) / Quilt Standard Libraries (QSL) — qsl
-    new RecommendedMod("qvIfYCYJ", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    // Reese's Sodium Options — reeses-sodium-options
-    new RecommendedMod("Bh37bMuy", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("Bh37bMuy", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.20.5", Than.GreaterThan)),
-    new RecommendedMod("Bh37bMuy", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Renice Shot — renice-shot
-    new RecommendedMod("ZDCwiIc3", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "26.2", Than.GreaterThan)),
-    // Remove Reloading Screen — rrls
-    new RecommendedMod("ZP7xHXtw", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.16.5", Than.GreaterThan)),
-    new RecommendedMod("ZP7xHXtw", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("ZP7xHXtw", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20", Than.GreaterThan)),
-    // Skyboxify — skyboxify
-    new RecommendedMod("DWuwk8aA", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.21", Than.GreaterThan)),
-    // Sodium — sodium
-    new RecommendedMod("AANobbMI", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.16.3", Than.GreaterThan)),
-    new RecommendedMod("AANobbMI", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("AANobbMI", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21.1", Than.GreaterThan)),
-    // Sodium Extra — sodium-extra
-    new RecommendedMod("PtjYWJkn", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.16.2", Than.GreaterThan)),
-    new RecommendedMod("PtjYWJkn", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.20.1", Than.GreaterThan)),
-    new RecommendedMod("PtjYWJkn", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Sodium Shadowy Path Blocks (SSPB) — sodium-shadowy-path-blocks
-    new RecommendedMod("EIa1eiMm", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.16.1", Than.GreaterThan)),
-    new RecommendedMod("EIa1eiMm", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.19", Than.GreaterThan)),
-    new RecommendedMod("EIa1eiMm", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.21", Than.GreaterThan)),
-    // Sound Physics Remastered — sound-physics-remastered
-    new RecommendedMod("qyVF9oeo", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.19", Than.GreaterThan)),
-    new RecommendedMod("qyVF9oeo", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = true },
-        "1.19.2", Than.GreaterThan)),
-    // YetAnotherConfigLib (YACL) — yacl
-    new RecommendedMod("1eAoo2KR", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.19", Than.GreaterThan)),
-    new RecommendedMod("1eAoo2KR", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = true, IsNeoForge = false },
-        "1.19.4", Than.GreaterThan)),
-    new RecommendedMod("1eAoo2KR", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "1.20", Than.GreaterThan)),
-    // Zoomify (Zoom) — zoomify
-    new RecommendedMod("w7ThoJFB", new ModLimited(
-        new ModType { IsFabric = true, IsQuilt = false, IsForge = false, IsNeoForge = false },
-        "1.18", Than.GreaterThan)),
-    new RecommendedMod("w7ThoJFB", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = true, IsForge = false, IsNeoForge = false },
-        "1.18.2", Than.GreaterThan)),
-    new RecommendedMod("w7ThoJFB", new ModLimited(
-        new ModType { IsFabric = false, IsQuilt = false, IsForge = false, IsNeoForge = true },
-        "26.1", Than.GreaterThan)),
-];
-
+        "xEyZuswh",
+        // Better Block Entities — better-block-entities
+        "ONZm0H7Y",
+        // Better Mount HUD — better-mount-hud
+        "kqJFAPU9",
+        // Cloth Config API — cloth-config
+        "9s6osm5g",
+        // Config Manager — configmanager
+        "jlNms3Jp",
+        // Continuity — continuity
+        "1IjD5062",
+        // Controlify (Controller support) — controlify
+        "DOUdJVEm",
+        // Crash Assistant — crash-assistant
+        "ix1qq8Ux",
+        // Debugify — debugify
+        "QwxR6Gcd",
+        // Dynamic FPS — dynamic-fps
+        "LQ3K71Q1",
+        // Dynamic Surroundings — dynamicsurroundingsfabric
+        "H7fshfpD",
+        // e4mc — e4mc
+        "qANg5Jrr",
+        // Embeddium — embeddium
+        "sk9rgfiA",
+        // [EMF] Entity Model Features — entity-model-features
+        "4I1XuqiY",
+        // Entity Culling — entityculling
+        "NNAgCjsB",
+        // [ETF] Entity Texture Features — entitytexturefeatures
+        "BVzZfTc1",
+        // Fabric API — fabric-api
+        "P7dR8mSH",
+        // Fabric Language Kotlin — fabric-language-kotlin
+        "Ha28R6CL",
+        // FastQuit — fastquit
+        "x1hIzbuY",
+        // FerriteCore — ferrite-core
+        "uXXizFIs",
+        // Forge Config API Port — forge-config-api-port
+        "ohNO6lps",
+        // IMBlocker — imblocker-original
+        "WMDesFsZ",
+        // ImmediatelyFast — immediatelyfast
+        "5ZwdcRci",
+        // Iris Shaders — iris
+        "YL57xq9U",
+        // Ixeris — ixeris
+        "p8RJPJIC",
+        // Just Enough Items (JEI) — jei
+        "u6dRKJwZ",
+        // LambDynamicLights - Dynamic Lights — lambdynamiclights
+        "yBW8D80W",
+        // Language Reload — language-reload
+        "uLbm7CG6",
+        // Lithium — lithium
+        "gvQqBUqZ",
+        // Main Menu Credits — main-menu-credits
+        "qJDfP7WN",
+        // MixinTrace Reborn — mixintrace-reborn
+        "Ok6FyXJ9",
+        // ModernFix — modernfix
+        "nmDcB62a",
+        // ModernFix-mVUS — modernfix-mvus
+        "TjSm1wrD",
+        // Mod Menu — modmenu
+        "mOgUt4GM",
+        // More Chat History — morechathistory
+        "8qkXwOnk",
+        // More Culling — moreculling
+        "51shyZVL",
+        // No Chat Reports — no-chat-reports
+        "qQyHxfxd",
+        // OptiGUI — optigui
+        "JuksLGBQ",
+        // Paginated Advancements & Custom Frames — paginatedadvancements
+        "pJogNFap",
+        // Text Placeholder API — placeholder-api
+        "eXts2L7r",
+        // Polytone — polytone
+        "3qAYkBMB",
+        // Puzzle — puzzle
+        "3IuO68q1",
+        // Quilted Fabric API (QFAPI) / Quilt Standard Libraries (QSL) — qsl
+        "qvIfYCYJ",
+        // Reese's Sodium Options — reeses-sodium-options
+        "Bh37bMuy",
+        // Renice Shot — renice-shot
+        "ZDCwiIc3",
+        // Remove Reloading Screen — rrls
+        "ZP7xHXtw",
+        // Skyboxify — skyboxify
+        "DWuwk8aA",
+        // Sodium — sodium
+        "AANobbMI",
+        // Sodium Extra — sodium-extra
+        "PtjYWJkn",
+        // Sodium Shadowy Path Blocks (SSPB) — sodium-shadowy-path-blocks
+        "EIa1eiMm",
+        // Sound Physics Remastered — sound-physics-remastered
+        "qyVF9oeo",
+        // YetAnotherConfigLib (YACL) — yacl
+        "1eAoo2KR",
+        // Zoomify (Zoom) — zoomify
+        "w7ThoJFB",
+    ];
 
     #endregion
 }
@@ -442,7 +152,13 @@ public class AppSettings
     public int MaximumSha1Threads { get; set; } = 24;
     public bool IsSha1Enabled { get; set; } = true;
     public DownloadSourceStrategy DownloadMinecraftSourceStrategy { get; set; } = DownloadSourceStrategy.OfficialOnly;
-    public string? InstallPath { get; set; }
+    private string _installPath = "${OLAN_BASE_PATH}/installed";
+    [AllowNull]
+    public string InstallPath
+    {
+        get => _installPath;
+        set => _installPath = string.IsNullOrWhiteSpace(value) ? "${OLAN_BASE_PATH}/installed" : value;
+    }
     public string? DefaultInstanceID { get; set; }
     public Guid? DefaultServerID { get; set; }
     // 主页默认启动项为服务器收藏时记录其 Id；为 null 时主页使用 DefaultInstanceID 对应的游戏数据。

@@ -584,6 +584,148 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
             : OlanExceptionWorker.ForUnknowException(ex);
     #endregion
 
+    #region 安装路径
+    public string[] InstallPathModes { get; } = ["基本路径", "运行路径", "自定义"];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCustomInstallPathEnabled))]
+    private string selectedInstallPathMode = "基本路径";
+
+    [ObservableProperty]
+    private string customInstallPath = string.Empty;
+
+    [ObservableProperty]
+    private string currentInstallPath = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCustomInstallPathEnabled))]
+    private bool isSavingInstallPath;
+
+    public bool IsCustomInstallPathEnabled => SelectedInstallPathMode == "自定义" && !IsSavingInstallPath;
+    private bool _loadingInstallPath;
+
+    private void LoadInstallPathSetting(AppSettings settings)
+    {
+        _loadingInstallPath = true;
+        try
+        {
+            SelectedInstallPathMode = settings.InstallPath.Replace('\\', '/') switch
+            {
+                "${OLAN_BASE_PATH}/installed" => "基本路径",
+                "${OLAN_APP_RUNNING_PATH}/installed" => "运行路径",
+                _ => "自定义"
+            };
+            CurrentInstallPath = Init.InstalledPath ?? Path.Combine(Init.BasePath, "installed");
+            CustomInstallPath = SelectedInstallPathMode == "自定义" ? settings.InstallPath : CurrentInstallPath;
+        }
+        finally
+        {
+            _loadingInstallPath = false;
+        }
+    }
+
+    partial void OnSelectedInstallPathModeChanged(string value)
+    {
+        if (_loadingInstallPath || IsSavingInstallPath)
+            return;
+#if DEBUG
+        if (Design.IsDesignMode)
+            return;
+#endif
+        if (value == "基本路径")
+            _ = SaveInstallPathAsync("${OLAN_BASE_PATH}/installed");
+        else if (value == "运行路径")
+            _ = SaveInstallPathAsync("${OLAN_APP_RUNNING_PATH}/installed");
+    }
+
+    private async Task SaveInstallPathAsync(string template)
+    {
+        var settings = _dbManger.Data.OlanSettings;
+        var previousPath = settings.InstallPath;
+        if (IsSavingInstallPath)
+            return;
+
+        IsSavingInstallPath = true;
+        try
+        {
+            var path = Path.GetFullPath(Tools.ReplacePlaceholders(template, new Dictionary<string, string>
+            {
+                ["OLAN_BASE_PATH"] = Init.BasePath,
+                ["OLAN_APP_RUNNING_PATH"] = AppContext.BaseDirectory
+            }).Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(path);
+            if (!template.Contains("${OLAN_BASE_PATH}", StringComparison.Ordinal) &&
+                !template.Contains("${OLAN_APP_RUNNING_PATH}", StringComparison.Ordinal))
+                template = path;
+            if (template == previousPath)
+                return;
+            settings.InstallPath = template;
+            await _dbManger.Save();
+        }
+        catch (Exception ex)
+        {
+            settings.InstallPath = previousPath;
+            LoadInstallPathSetting(settings);
+            await ShowSettingsException(ex);
+            return;
+        }
+        finally
+        {
+            IsSavingInstallPath = false;
+        }
+
+        await OlanExceptionWorker.ForOlanException(new OlanException("安装路径已更改",
+            "更改游戏安装路径不会复制原有的游戏文件与数据，请自行迁移；新路径将在重启启动器后生效。",
+            OlanExceptionAction.FatalError));
+    }
+
+    [RelayCommand]
+    private async Task PickInstallPath()
+    {
+        if (!IsCustomInstallPathEnabled)
+            return;
+        try
+        {
+            var topLevel = TopLevel.GetTopLevel(MainWindow.mainwindow);
+            if (topLevel?.StorageProvider is not { CanPickFolder: true } storageProvider)
+                throw new OlanException("无法选择安装路径", "当前环境无法打开文件夹选择器，请手动输入路径后点击应用。");
+
+            var folders = await storageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "选择游戏安装路径",
+                AllowMultiple = false
+            });
+            if (folders.FirstOrDefault()?.TryGetLocalPath() is not { } path)
+                return;
+
+            CustomInstallPath = Path.GetFullPath(path);
+            await SaveInstallPathAsync(CustomInstallPath);
+        }
+        catch (Exception ex)
+        {
+            await ShowSettingsException(ex);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ApplyInstallPath()
+    {
+        if (!IsCustomInstallPathEnabled)
+            return;
+        try
+        {
+            if (string.IsNullOrWhiteSpace(CustomInstallPath))
+                throw new OlanException("安装路径不能为空", "请输入游戏安装路径，或点击选择路径选择文件夹。");
+
+            await SaveInstallPathAsync(CustomInstallPath.Trim());
+        }
+        catch (Exception ex)
+        {
+            await ShowSettingsException(ex);
+        }
+    }
+    #endregion
+
     #region 下载选项
     [ObservableProperty]
     public int _MaxDownloadThreadsValue;
@@ -675,6 +817,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
             LeftButtonListSpacing = 8;
             _ = RefList();
             LoadHomeSettings(new AppSettings());
+            LoadInstallPathSetting(new AppSettings());
             MaxDownloadThreadsValue = 24;
             MaxSha1ThreadsValue = 24;
             IsSha1Enabled = true;
@@ -698,6 +841,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
             MaxSha1ThreadsValue = _dbManger.Data.OlanSettings.MaximumSha1Threads;
             IsSha1Enabled = _dbManger.Data.OlanSettings.IsSha1Enabled;
             SelectedDownloadSource = _dbManger.Data.OlanSettings.DownloadMinecraftSourceStrategy;
+            LoadInstallPathSetting(_dbManger.Data.OlanSettings);
         }
         catch (NullReferenceException ex)
         {

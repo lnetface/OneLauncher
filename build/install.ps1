@@ -1,11 +1,25 @@
 # OneLauncher Windows 安装脚本
+param(
+    [Parameter(Position = 0)]
+    [ValidateSet("update")]
+    [string]$Mode,
+
+    [Parameter(Position = 1)]
+    [string]$OlanPath
+)
 
 $ErrorActionPreference = "Stop"
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
-$repository = "zhweaa/OneLauncher"
+$repository = "lnetface/OneLauncher"
 $assetName = "OneLauncher.Desktop.exe"
-$softwareFile = Join-Path (Get-Location) $assetName
+$softwareFile = Join-Path (Join-Path $env:USERPROFILE "OneLauncher") $assetName
+if ($OlanPath) {
+    if (Test-Path -LiteralPath $OlanPath -PathType Container) {
+        $OlanPath = Join-Path $OlanPath $assetName
+    }
+    $softwareFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OlanPath)
+}
 $logFile = Join-Path $env:TEMP "OneLauncherInstall.log"
 
 # 兼容 Windows PowerShell 5.1 访问 GitHub
@@ -59,19 +73,60 @@ function Get-OneLauncherAsset {
     throw "没有找到包含 $assetName 的公开 Release。"
 }
 
+function Stop-OneLauncher {
+    $processName = [System.IO.Path]::GetFileNameWithoutExtension($softwareFile)
+    foreach ($process in @(Get-Process -Name $processName -ErrorAction SilentlyContinue)) {
+        if ($process.Path -and [string]::Equals($process.Path, $softwareFile, [StringComparison]::OrdinalIgnoreCase)) {
+            Write-Host "正在结束 OneLauncher 进程（$($process.Id)）..."
+            Stop-Process -Id $process.Id -Force
+            $process.WaitForExit()
+        }
+    }
+}
+
 function Download-OneLauncher {
+    Stop-OneLauncher
     $asset = Get-OneLauncherAsset
     $size = [Math]::Round($asset.size / 1MB, 1)
 
     Write-Host "正在下载 $($asset.name)（$size MB）..."
 
-    Invoke-WebRequest `
-        -Uri $asset.browser_download_url `
-        -OutFile $softwareFile `
-        -UseBasicParsing
-
-    if (-not (Test-Path $softwareFile)) {
-        throw "下载完成后未找到 $softwareFile。"
+    $installDirectory = Split-Path -Parent $softwareFile
+    New-Item -ItemType Directory -Path $installDirectory -Force | Out-Null
+    $downloadFile = Join-Path $installDirectory ([Guid]::NewGuid().ToString() + ".download")
+    $response = $null
+    $inputStream = $null
+    $outputStream = $null
+    try {
+        $request = [System.Net.HttpWebRequest]::Create($asset.browser_download_url)
+        $request.UserAgent = "OneLauncher-Installer"
+        $response = $request.GetResponse()
+        $inputStream = $response.GetResponseStream()
+        $outputStream = [System.IO.File]::Create($downloadFile)
+        $buffer = New-Object byte[] 65536
+        $downloaded = 0L
+        while (($read = $inputStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            $outputStream.Write($buffer, 0, $read)
+            $downloaded += $read
+            $percent = if ($asset.size -gt 0) { [Math]::Min(100, [int]($downloaded * 100 / $asset.size)) } else { 0 }
+            Write-Progress -Activity "正在下载 OneLauncher" -Status "$([Math]::Round($downloaded / 1MB, 1)) / $size MB" -PercentComplete $percent
+        }
+        $outputStream.Dispose()
+        $outputStream = $null
+        if ($downloaded -le 0 -or $downloaded -ne $asset.size) {
+            throw "下载文件大小不符，旧版文件未替换。"
+        }
+        Stop-OneLauncher
+        Move-Item -LiteralPath $downloadFile -Destination $softwareFile -Force
+    }
+    finally {
+        if ($outputStream) { $outputStream.Dispose() }
+        if ($inputStream) { $inputStream.Dispose() }
+        if ($response) { $response.Dispose() }
+        Write-Progress -Activity "正在下载 OneLauncher" -Completed
+        if (Test-Path -LiteralPath $downloadFile) {
+            Remove-Item -LiteralPath $downloadFile -Force
+        }
     }
 
     Write-Host "OneLauncher 下载成功：" -ForegroundColor Green
@@ -137,6 +192,32 @@ function Install-Java {
 Start-Transcript -Path $logFile -Append | Out-Null
 
 try {
+    if ($OlanPath -and $Mode -ne "update") {
+        throw "旧版路径仅支持与 update 参数一起使用。"
+    }
+    if ($Mode -eq "update") {
+        Download-OneLauncher
+        Write-Host "OneLauncher 更新完成。" -ForegroundColor Green
+        return
+    }
+
+    if (Test-Path -LiteralPath $softwareFile -PathType Leaf) {
+        Write-Host "已找到 OneLauncher：$softwareFile"
+        Write-Host "1. 打开 OneLauncher"
+        Write-Host "2. 更新 OneLauncher"
+        $existingChoice = Read-Host "请选择一个选项（1-2）"
+        if ($existingChoice -eq "1") {
+            Start-Process -FilePath $softwareFile -WorkingDirectory (Split-Path -Parent $softwareFile)
+            return
+        }
+        if ($existingChoice -ne "2") {
+            throw "输入无效，请输入 1 或 2。"
+        }
+        Download-OneLauncher
+        Write-Host "OneLauncher 更新完成。" -ForegroundColor Green
+        return
+    }
+
     Write-Host ""
     Write-Host "=== OneLauncher 安装程序 ===" -ForegroundColor Cyan
     Write-Host ""
@@ -167,7 +248,7 @@ try {
     $runChoice = Read-Host "是否立即运行 OneLauncher？（Y/N）"
 
     if ($runChoice -match '^[Yy]$') {
-        Start-Process -FilePath $softwareFile
+        Start-Process -FilePath $softwareFile -WorkingDirectory (Split-Path -Parent $softwareFile)
     }
 }
 catch {

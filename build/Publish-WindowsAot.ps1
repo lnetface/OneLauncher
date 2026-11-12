@@ -5,7 +5,7 @@ Push-Location $workspacePath
 try {
     $originalPath = $env:PATH
     if ($PublishProfile -eq 'WindowsAot') {
-        $toolRoot = Join-Path $workspacePath 'artifacts/toolchains'
+        $toolRoot = Join-Path $workspacePath 'build/toolchains'
         $toolBin = Join-Path $toolRoot 'llvm-mingw-20261020-ucrt-x86_64/bin'
         if (-not (Test-Path (Join-Path $toolBin 'llvm-ar.exe'))) {
             New-Item -ItemType Directory -Path $toolRoot -Force | Out-Null
@@ -23,7 +23,7 @@ try {
     try {
         # The pubxml owns RID, build mode and PublishDir.
         dotnet publish OneLauncher.Desktop/OneLauncher.Desktop.csproj "-p:PublishProfile=$PublishProfile" `
-            --artifacts-path "artifacts/build/$PublishProfile" --disable-build-servers
+            --artifacts-path "build/output/$PublishProfile" --disable-build-servers
         if ($LASTEXITCODE -ne 0) { throw "Publish failed ($LASTEXITCODE)." }
     } finally { $env:PATH = $originalPath }
     Write-Host "Published using $PublishProfile.pubxml (output directory is defined by PublishDir)."

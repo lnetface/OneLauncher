@@ -24,5 +24,5 @@ fi
 cd -- "$workspace"
 # RID, build mode and PublishDir come exclusively from the existing pubxml.
 dotnet publish OneLauncher.Desktop/OneLauncher.Desktop.csproj \
-    "-p:PublishProfile=$profile" --artifacts-path "artifacts/build/$profile" \
+    "-p:PublishProfile=$profile" --artifacts-path "build/output/$profile" \
     --disable-build-servers

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using OneLauncher.Core.DefaultComponent.Downloader;
 using OneLauncher.Core.Global.ModelDataMangers;
+using OneLauncher.Core.Helper;
 using OneLauncher.Core.Helper.Models;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -13,7 +14,7 @@ public static partial class Init
 {
     public const string ApplicationID = "53740b20-7f24-46a3-82cc-ea0376b9f5b5";
     public const string PackageName = "com.onelauncher.lnetface";
-    public const string ProjectWebsite = "https://github.com/zhweaa/OneLauncher";
+    public const string ProjectWebsite = "https://github.com/lnetface/OneLauncher";
     public static Task<IServiceCollection> InitTask;
     //public static IServiceCollection Service { get; private set; }
     public static string BasePath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneLauncher");
@@ -23,7 +24,18 @@ public static partial class Init
 #else
     { get; private set; }
 #endif
-    public static string InstalledPath { get; private set; }
+    private static string _installedPath = null!;
+    public static string InstalledPath
+    {
+        get => _installedPath;
+        // 启动时解析并固定路径，配置变更在重启后生效。
+        private set => _installedPath = Path.GetFullPath(Tools.ReplacePlaceholders(value,
+            new Dictionary<string, string>
+            {
+                ["OLAN_BASE_PATH"] = BasePath,
+                ["OLAN_APP_RUNNING_PATH"] = AppContext.BaseDirectory
+            }).Replace('/', Path.DirectorySeparatorChar));
+    }
     public static SystemType SystemType { get; private set; }
     //public static List<VersionBasicInfo> MojangVersionList { get; set; } = null;
     public static List<IDisposable> OnApplicationClosingReleaseSourcesList = new();
@@ -45,7 +57,9 @@ public static partial class Init
             services.AddSingleton<DBManager>(configManger);
             ConfigManager = configManger;
 
-            InstalledPath = configManger.Data.OlanSettings.InstallPath ?? Path.Combine(BasePath,"installed");
+            // 持久化配置模型对旧版 null 或空安装路径的默认值补全。
+            await configManger.Save();
+            InstalledPath = configManger.Data.OlanSettings.InstallPath;
             GameRootPath = Path.Combine(InstalledPath, "minecraft");
             Directory.CreateDirectory(InstalledPath);
             // 初始化系统信息

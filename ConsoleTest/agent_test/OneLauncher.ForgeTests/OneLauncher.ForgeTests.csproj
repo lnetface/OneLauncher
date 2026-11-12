@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../OneLauncher.Core/OneLauncher.Core.csproj" />
+    <ProjectReference Include="../../../OneLauncher.Core/OneLauncher.Core.csproj" />
+    <None Update="Probe.java" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

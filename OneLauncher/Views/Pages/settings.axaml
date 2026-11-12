@@ -220,6 +220,37 @@
 					  </StackPanel>
 				  </Button>
 			  </StackPanel>
+			  <StackPanel Margin="0,16,0,0" Spacing="8">
+				  <TextBlock Text="游戏安装路径"/>
+				  <TextBlock Classes="page-subtitle"
+							 Text="基本路径使用用户目录下 OneLauncher 的 installed 文件夹，运行路径使用启动器所在目录的 installed 文件夹。选择自定义后可选择文件夹直接保存，或手动输入后点击应用；不存在的文件夹会自动创建。更改路径需要重启，不会自动迁移游戏文件与数据。"/>
+				  <TextBlock Text="当前生效路径" Foreground="{DynamicResource SecondaryForegroundBrush}"/>
+				  <TextBlock Text="{Binding CurrentInstallPath}" TextWrapping="Wrap"/>
+				  <ComboBox x:Name="InstallPathModeComboBox" Width="320" HorizontalAlignment="Left"
+							ItemsSource="{Binding InstallPathModes}"
+							SelectedItem="{Binding SelectedInstallPathMode, Mode=TwoWay}"
+							ItemTemplate="{StaticResource SettingsOptionTemplate}"
+							IsEnabled="{Binding !IsSavingInstallPath}"
+							AutomationProperties.Name="游戏安装路径模式"/>
+				  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8"
+						IsEnabled="{Binding IsCustomInstallPathEnabled}">
+					  <TextBox x:Name="CustomInstallPathTextBox" Grid.Column="0"
+							   Text="{Binding CustomInstallPath, Mode=TwoWay}" Watermark="请输入游戏安装路径"
+							   AutomationProperties.Name="自定义游戏安装路径"/>
+					  <Button Grid.Column="1" Classes="item-action" Command="{Binding PickInstallPathCommand}">
+						  <StackPanel Orientation="Horizontal" Spacing="6">
+							  <controls:ThemeIcon IconKey="IconBrowser" Width="18" Height="18"/>
+							  <TextBlock Text="选择路径"/>
+						  </StackPanel>
+					  </Button>
+					  <Button Grid.Column="2" Classes="item-action" Command="{Binding ApplyInstallPathCommand}">
+						  <StackPanel Orientation="Horizontal" Spacing="6">
+							  <controls:ThemeIcon IconKey="IconSave" Width="18" Height="18"/>
+							  <TextBlock Text="应用"/>
+						  </StackPanel>
+					  </Button>
+				  </Grid>
+			  </StackPanel>
 		  </StackPanel>
 		  <!-- 关于 -->
 		  <StackPanel Classes="settings-section">

@@ -13,5 +13,5 @@ if not "%~2"=="" (
     exit /b 2
 )
 rem The helper prepares LLVM for AOT; the pubxml defines the publish settings.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\Publish-WindowsAot.ps1" -PublishProfile "%profile%"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\build\Publish-WindowsAot.ps1" -PublishProfile "%profile%"
 exit /b %errorlevel%

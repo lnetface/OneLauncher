@@ -149,14 +149,6 @@ internal partial class NewGameDataPaneViewModel : BaseViewModel, IPaneHost
         task.SetProgress("正在获取推荐模组信息...", 0);
         NotifyInstallation("已开始在后台安装推荐模组，可在任务列表查看进度");
 
-        var limited = new ModLimited(new ModType
-        {
-            IsFabric = gameData.ModLoader == ModEnum.fabric,
-            IsQuilt = gameData.ModLoader == ModEnum.quilt,
-            IsForge = gameData.ModLoader == ModEnum.forge,
-            IsNeoForge = gameData.ModLoader == ModEnum.neoforge
-        }, gameData.VersionId, Than.GreaterThan);
-
         var progress = new Progress<(int current, string file)>(p =>
             Dispatcher.UIThread.Post(() =>
             {
@@ -167,7 +159,7 @@ internal partial class NewGameDataPaneViewModel : BaseViewModel, IPaneHost
 
         try
         {
-            await Task.Run(() => _resourceInstaller.InstallRecommendedMods(progress, gameData, limited, token), token);
+            await Task.Run(() => _resourceInstaller.InstallRecommendedMods(progress, gameData, token), token);
             token.ThrowIfCancellationRequested();
             task.SetProgress("推荐模组安装完成", 100);
             task.SetDone();

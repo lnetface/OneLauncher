@@ -14,9 +14,9 @@ public sealed class ResourceInstallerService
     internal ResourceInstallerService()
     {
     }
-    public Task InstallRecommendedMods(IProgress<(int current,string file)> progress, GameData data,ModLimited limited,CancellationToken token)
+    public Task InstallRecommendedMods(IProgress<(int current,string file)> progress, GameData data,CancellationToken token)
     {
-        return new RecommendedModInstaller(data,limited).InstallAsync(new Progress<(int c,string f)>(p =>
+        return new RecommendedModInstaller(data).InstallAsync(new Progress<(int c,string f)>(p =>
         {
             progress?.Report((p.c, p.f));
         }),token);

@@ -18,7 +18,7 @@ using OneLauncher.Core.DefaultComponent.Downloader.DownloadMinecraftProviders;
 using OneLauncher.Core.Services;
 
 // Standalone offline regression runner: never initializes the real launcher or its user data.
-var output = Path.GetFullPath(args.FirstOrDefault() ?? Path.Combine("artifacts", "settings-regression"));
+var output = Path.GetFullPath(args.FirstOrDefault() ?? Path.Combine("build", "settings-regression"));
 Directory.CreateDirectory(output);
 var root = Path.Combine(output, "data", Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);

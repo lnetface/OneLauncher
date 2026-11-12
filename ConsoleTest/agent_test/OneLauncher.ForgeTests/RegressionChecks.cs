@@ -37,7 +37,7 @@ internal static class RegressionChecks
         await CheckPclAsync(output, assert);
         assert(ModLoaderDetector.Detect("org.quiltmc.loader.impl.launch.knot.KnotClient") == ModEnum.quilt, "Quilt main class");
         await FailAsync(() => { Tools.MainClassToModEnum("net.minecraft.launchwrapper.Launch", gameArguments: ["--tweakClass", "com.example.OtherTweaker"]); return Task.CompletedTask; }, "未支持", assert);
-        var work = Path.Combine(Path.GetTempPath(), "OneLauncherForgeTests", Guid.NewGuid().ToString("N"));
+        var work = Path.Combine(output, "processor-fixtures", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(work);
         try
         {

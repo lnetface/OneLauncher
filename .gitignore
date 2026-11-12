@@ -61,7 +61,13 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 # Includes publish packages, local toolchains and isolated build outputs.
-artifacts/
+/build/output/
+/build/releases/
+/build/toolchains/
+/build/json-aot-check/
+/build/jvm-aot-check/
+/build/game-data-ui-check/
+/build/settings-regression/
 
 # Tye
 .tye/
