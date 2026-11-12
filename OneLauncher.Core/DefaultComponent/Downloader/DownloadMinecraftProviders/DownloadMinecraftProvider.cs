@@ -32,9 +32,10 @@ internal partial class DownloadMinecraft
         if (main == null)
             return Task.CompletedTask;
         NdDowItem[] downloadSources = _urlProviders.Select(p => p.GetClientMainFile(main.Value)).ToArray();
-        return _raceDownloader.RaceSingleFileAsync(
+        return _raceDownloader.RaceSingleFileWithRetryAsync(
             downloadSources,
-            cancelToken
+            cancelToken,
+            _shouldContinue
         );
     }
     private Task DownloadAssetsSupportTasker(List<NdDowItem> assets)
@@ -50,7 +51,8 @@ internal partial class DownloadMinecraft
             {
                 progress?.Report((DownProgress.DownAssets, alls, Interlocked.Increment(ref dones), fileName));
             }),
-            cancelToken
+            cancelToken,
+            _shouldContinue
         );
     }
 
@@ -67,7 +69,8 @@ internal partial class DownloadMinecraft
             {
                 progress?.Report((DownProgress.DownLibs, alls, Interlocked.Increment(ref dones), fileName));
             }),
-            cancelToken
+            cancelToken,
+            _shouldContinue
         );
 
         // 解压原生库文件

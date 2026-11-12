@@ -18,13 +18,15 @@ public sealed class VersionInstallerService
     public async Task InstallNewVersion(
         DownloadInfo info,
         IProgress<(DownProgress Title, int AllFiles, int DownedFiles, string DowingFileName)> progress,
-        CancellationToken? cancelToken = null
+        CancellationToken? cancelToken = null,
+        // 单文件下载失败时是否只重试该文件；在下载线程上同步调用，可阻塞等待用户选择
+        Func<string, bool>? shouldContinue = null
         )
     {
         _versionListManager.EnsureGameRoot(info.GameRootPath);
         var token = cancelToken ?? CancellationToken.None;
         token.ThrowIfCancellationRequested();
-        var downloader = new DownloadMinecraft(info, progress, token);
+        var downloader = new DownloadMinecraft(info, progress, token, shouldContinue);
         await downloader.MinecraftBasic();
         token.ThrowIfCancellationRequested();
         await _versionListManager.RegisterInstalledVersionAsync(info.VersionInstallInfo, token);

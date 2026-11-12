@@ -21,16 +21,18 @@ internal class RaceDownloader
         IEnumerable<IEnumerable<NdDowItem>> basicItems, // 外部是单个文件，内部是单个文件的不同下载源
         int maxParallelism,
         IProgress<string> progress,
-        CancellationToken token)
+        CancellationToken token,
+        Func<string, bool>? shouldContinue = null)
     {
-        return RunRaceManyFilesAsync(basicItems, maxParallelism, progress, token);
+        return RunRaceManyFilesAsync(basicItems, maxParallelism, progress, token, shouldContinue);
     }
 
     private async Task RunRaceManyFilesAsync(
         IEnumerable<IEnumerable<NdDowItem>> basicItems,
         int maxParallelism,
         IProgress<string> progress,
-        CancellationToken token)
+        CancellationToken token,
+        Func<string, bool>? shouldContinue)
     {
         try
         {
@@ -38,7 +40,7 @@ internal class RaceDownloader
                 new ParallelOptions { MaxDegreeOfParallelism = maxParallelism, CancellationToken = token },
                 async (item, ct) =>
                 {
-                    await RaceSingleFileAsync(item, ct);
+                    await RaceSingleFileWithRetryAsync(item, ct, shouldContinue);
                     if (!ct.IsCancellationRequested)
                         progress?.Report(Path.GetFileName(item.FirstOrDefault().path));
                 });
@@ -46,6 +48,36 @@ internal class RaceDownloader
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
             // 并行下载中的取消由调用方继续处理，不转换为失败。
+        }
+    }
+
+    /// <summary>
+    /// 单文件下载失败时询问 shouldContinue 是否只重试该文件。
+    /// shouldContinue 为 null、返回 false 或达到次数上限时抛出最后一次异常，避免缺失文件被当作完成。
+    /// shouldContinue 可能同步阻塞（等待用户选择），调用方不应在 UI 线程执行本方法。
+    /// </summary>
+    internal async Task RaceSingleFileWithRetryAsync(
+        IEnumerable<NdDowItem> item,
+        CancellationToken token,
+        Func<string, bool>? shouldContinue)
+    {
+        const int MaxAttempts = 5;
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await RaceSingleFileAsync(item, token);
+                return;
+            }
+            catch (Exception ex) when (!token.IsCancellationRequested)
+            {
+                // 最后一次失败不再询问，直接抛出
+                if (attempt >= MaxAttempts || shouldContinue == null)
+                    throw;
+                string detail = ex is OlanException olanException ? olanException.Message : ex.ToString();
+                if (!shouldContinue($"第 {attempt}/{MaxAttempts} 次尝试失败。{Environment.NewLine}{detail}"))
+                    throw;
+            }
         }
     }
 
@@ -118,7 +150,11 @@ internal class RaceDownloader
         if(successfulResponse == null)
         {
             // 如果依旧没有成功的响应，抛出异常
-            throw new OlanException("下载失败",$"获取下载响应时所有候选源均失败；目标文件=详见各下载源请求，响应头获取失败；请求URL列表={string.Join(" | ", item.Select(candidate => candidate.url))}；目标文件列表={string.Join(" | ", item.Select(candidate => candidate.path))}。所有下载源均无法访问头");
+            throw new OlanException(
+                "所有下载源均无法访问头",
+                $"获取下载响应时所有候选源均失败；目标文件=详见各下载源请求，响应头获取失败；请求URL列表={string.Join(" | ", item.Select(candidate => candidate.url))}；目标文件列表={string.Join(" | ", item.Select(candidate => candidate.path))}。",
+                OlanExceptionAction.Error,
+                new HttpRequestException());
         }
         #endregion
 

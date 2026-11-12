@@ -18,17 +18,21 @@ internal partial class DownloadMinecraft
     public readonly IProgress<(DownProgress Title, int AllFiles, int DownedFiles, string DowingFileName)>? progress;
     public int alls = 0;
     public int dones = 0;
-    
+    // 单文件所有源失败时询问是否只重试该文件；可能同步阻塞等待用户选择，null 表示首次失败即抛出
+    private readonly Func<string, bool>? _shouldContinue;
+
     public DownloadMinecraft(
         DownloadInfo info,
-        
+
         IProgress<(DownProgress Title, int AllFiles, int DownedFiles, string DowingFileName)> progress,
-        CancellationToken? cancelToken = null
+        CancellationToken? cancelToken = null,
+        Func<string, bool>? shouldContinue = null
         )
     {
         this.info = info;
         this.progress = progress;
         this.cancelToken = cancelToken ?? CancellationToken.None;
+        _shouldContinue = shouldContinue;
 
         _urlProviders = info.DownloadStrategy switch
         { 

@@ -163,6 +163,22 @@ internal partial class DownloadPaneViewModel : BaseViewModel, IPaneHost
             FileName = p.c;
         });
         WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage($"开始下载 MC {VersionName}。", openTaskCenterAfterClick: true));
+        // 单文件所有下载源失败时在下载线程上阻塞询问用户：重试只重新下载该文件，其他文件继续下载。
+        // 用户忽略一次后本次下载失败，其余排队中的询问直接放弃，避免连续弹窗。
+        int userGaveUp = 0;
+        string versionName = VersionName;
+        Func<string, bool> shouldContinue = detail =>
+        {
+            if (Volatile.Read(ref userGaveUp) != 0 || cancellation.IsCancellationRequested)
+                return false;
+            var askException = new OlanException("下载失败",
+                $"下载 MC {versionName} 时单个文件的所有下载源均失败。点击“重试”只重新下载该文件，其他文件继续下载；点击“忽略”结束本次安装。{Environment.NewLine}{detail}",
+                OlanExceptionAction.Error);
+            bool retry = OlanExceptionWorker.AskRetryBlocking(askException, cancellation);
+            if (!retry)
+                Volatile.Write(ref userGaveUp, 1);
+            return retry;
+        };
         try
         {
             var content = await Task.Run(async () =>
@@ -178,7 +194,7 @@ internal partial class DownloadPaneViewModel : BaseViewModel, IPaneHost
                         IsDownloadQuiltWithQSL
                         );
                 cancellation.ThrowIfCancellationRequested();
-                await _unitedCore.VersionInstallerService.InstallNewVersion(info, progressReporter, cancellation);
+                await _unitedCore.VersionInstallerService.InstallNewVersion(info, progressReporter, cancellation, shouldContinue);
                 return info;
             }, cancellation);
             cancellation.ThrowIfCancellationRequested();
