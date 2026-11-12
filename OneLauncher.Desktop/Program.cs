@@ -34,6 +34,9 @@ class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+#if ONELAUNCHER_TARGET_LINUX
+            .WithInterFont()
+#endif
             .With(new Win32PlatformOptions()
             {
                 RenderingMode = [Win32RenderingMode.AngleEgl, Win32RenderingMode.Vulkan,Win32RenderingMode.Software]
