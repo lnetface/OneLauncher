@@ -41,9 +41,9 @@ public static class Tools
     /// <summary>
     /// 使用主类、加载器构件和参数识别身份；共享主类需要额外的清单证据。
     /// </summary>
-    public static ModEnum MainClassToModEnum(string mainClass, IEnumerable<string>? libraries = null, IEnumerable<string>? gameArguments = null)
+    public static ModEnum MainClassToModEnum(string mainClass, IEnumerable<string>? libraries = null, IEnumerable<string>? gameArguments = null, string diagnosticSource = "直接输入主类/库坐标/参数")
     {
-        return ModLoaderDetector.Detect(mainClass, libraries, gameArguments);
+        return ModLoaderDetector.Detect(mainClass, libraries, gameArguments, diagnosticSource);
     }
     public static async Task CopyDirectoryAsync(string sourceDir, string destDir, CancellationToken token)
     {
@@ -135,7 +135,7 @@ public static class Tools
         {
             throw new OlanException(
                 "无法打开文件夹",
-                "无法执行启动操作",
+                $"调用系统文件管理器打开目录；文件/目录 folderPath={folderPath}。无法执行启动操作",
                 OlanExceptionAction.Error);
         }
     }

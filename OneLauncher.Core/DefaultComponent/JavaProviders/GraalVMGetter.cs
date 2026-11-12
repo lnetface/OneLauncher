@@ -17,6 +17,6 @@ internal class GraalVMGetter : BaseJavaProvider, IJavaProvider
     {
         string fileExtension = systemTypeName == "windows" ? "zip" : "tar.gz";
         string downloadUrl = $"https://download.oracle.com/graalvm/{javaVersion}/latest/graalvm-jdk-{javaVersion}_{systemTypeName}-{systemArchName}_bin.{fileExtension}";
-        return GetAndDownloadAsync(() => Task.FromResult<string?>(downloadUrl), progress);
+        return GetAndDownloadAsync(() => Task.FromResult<string?>(downloadUrl), progress, downloadUrl);
     }
 }

@@ -19,11 +19,13 @@ public class OlanException : Exception
     public Exception? OriginalException { get; set; }
     // 重试方法，会在窗口显示，并由用户决定是否调用
     public Action? TryAgainFunction { get; set; } = null;
+
     public OlanException(string Title, string Message, OlanExceptionAction action = OlanExceptionAction.Error)
     {
         this.Title = Title;
         this.Message = Message;
         Action = action;
+        UnitedCore.Log(this);
     }
     public OlanException(string Title, string Message, OlanExceptionAction action, Exception originalException)
     {
@@ -31,6 +33,7 @@ public class OlanException : Exception
         this.Message = Message;
         Action = action;
         OriginalException = originalException;
+        UnitedCore.Log(this);
     }
     public OlanException(string Title, string Message, OlanExceptionAction action, Exception originalException, Action taf)
     {
@@ -39,5 +42,6 @@ public class OlanException : Exception
         Action = action;
         OriginalException = originalException;
         TryAgainFunction = taf;
+        UnitedCore.Log(this);
     }
 }

@@ -102,7 +102,7 @@ internal sealed class GameLauncher : IDisposable
         }
         catch(Win32Exception)
         {
-            throw new OlanException("启动失败","无法找到Java运行环境，请确保已正确安装Java并在设置中配置了Java路径",OlanExceptionAction.Error);
+            throw new OlanException("启动失败",$"通过 Java 可执行文件启动游戏进程；文件/目录 launchGamePath={launchGamePath}；Java 文件={commandBuilder.GetJavaPath()}。无法找到Java运行环境，请确保已正确安装Java并在设置中配置了Java路径",OlanExceptionAction.Error);
         }
         catch (OperationCanceledException)
         {

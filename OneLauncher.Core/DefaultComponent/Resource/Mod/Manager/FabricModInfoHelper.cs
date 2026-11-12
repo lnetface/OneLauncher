@@ -17,7 +17,7 @@ internal class FabricModInfoHelper : IModInfoHelper
         FabricModJson info = await JsonSerializer.DeserializeAsync<FabricModJson>(
             configEntry.Open(),
             FabricModJsonContext.Default.FabricModJson
-        ) ?? throw new OlanException("模组信息解析失败", $"无法从文件'{filePath}'的fabric.mod.json中读取到有效信息");
+        ) ?? throw new OlanException("模组信息解析失败", $"读取模组 JAR 的 fabric.mod.json 条目；文件/目录 filePath={filePath}。无法从文件'{filePath}'的fabric.mod.json中读取到有效信息");
 
         byte[]? iconBytes = null;
         if (info.Icon != null)

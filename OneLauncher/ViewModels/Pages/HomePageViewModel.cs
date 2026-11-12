@@ -63,7 +63,7 @@ internal sealed class ServerQuicklyLaunchItem(UnitedCore unitedCore, ServerEntry
         if (gameData == null)
         {
             await OlanExceptionWorker.ForOlanException(new OlanException(
-                "启动失败", $"没有找到服务器对应的游戏实例：{Server.InstanceId}", OlanExceptionAction.Error));
+                "启动失败", $"为主页服务器启动项定位游戏实例；实例索引文件={Path.Combine(Init.GameRootPath, "instance", "instance.json")}。没有找到服务器对应的游戏实例：{Server.InstanceId}", OlanExceptionAction.Error));
             return;
         }
         await Game.EasyGameLauncher(unitedCore, gameData, Server.ServerInfo, false);
@@ -198,7 +198,7 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
         if (Dispatcher.UIThread.CheckAccess())
             ApplyHomeSettings();
         else
-            Dispatcher.UIThread.Post(ApplyHomeSettings);
+            Dispatcher.UIThread.Post(() => ApplyHomeSettings());
     }
 
     private void ApplyHomeSettings()
@@ -218,7 +218,7 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
     {
         if (!Dispatcher.UIThread.CheckAccess())
         {
-            Dispatcher.UIThread.Post(RefreshHomeBackground);
+            Dispatcher.UIThread.Post(() => RefreshHomeBackground());
             return;
         }
         LoadHomeBackground(IsMagicButtonStyle ? HomeBackgroundStore.FindCurrent() : null);
@@ -595,6 +595,8 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
         }
         catch (Exception ex)
         {
+            if (ex is not OlanException)
+                _ = new OlanException("获取新闻失败", $"请求并读取 Minecraft 新闻；请求URL=https://launchercontent.mojang.com/v2/news.json。原因：{ex.Message}", OlanExceptionAction.Warning, ex);
             WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage($"获取新闻失败，请检查网络连接{Environment.NewLine}{ex.Message}", NotificationType.Error));
         }
         finally

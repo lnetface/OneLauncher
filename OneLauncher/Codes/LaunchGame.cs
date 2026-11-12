@@ -74,7 +74,7 @@ internal class Game
                         //_=OlanExceptionWorker.ForOlanException(
                         throw new OlanException(
                              "游戏异常退出",
-                             $"检测到游戏异常退出，代码：{code}{Environment.NewLine}建议尝试以调式模式启动或询问Agent以寻找异常原因{Environment.NewLine}点击重试以激活Agent调试",
+                             $"游戏退出事件中检查退出码；实例目录={gameData.InstancePath}；实例标识={gameData.InstanceId}；Minecraft={gameData.VersionId}。检测到游戏异常退出，代码：{code}{Environment.NewLine}建议尝试以调式模式启动或询问Agent以寻找异常原因{Environment.NewLine}点击重试以激活Agent调试",
                              OlanExceptionAction.Warning,
                              new LaunchException(gameData),
                              () => _ = EasyGameLauncher(unitedCore, gameData, serverInfo, true));
@@ -109,22 +109,22 @@ internal class Game
         catch (UnauthorizedAccessException uex)
         {
             await OlanExceptionWorker.ForOlanException(
-                        new OlanException("启动失败", $"没有权限访问游戏文件夹{Environment.NewLine}{uex}", OlanExceptionAction.Error, uex));
+                        new OlanException("启动失败", $"准备或启动游戏时访问文件；实例目录={gameData.InstancePath}；实例标识={gameData.InstanceId}；Minecraft={gameData.VersionId}。没有权限访问游戏文件夹{Environment.NewLine}{uex}", OlanExceptionAction.Error, uex));
         }
         catch (FileNotFoundException fex)
         {
             await OlanExceptionWorker.ForOlanException(
-                        new OlanException("启动失败", $"无法找到启动所需的文件{Environment.NewLine}{fex}", OlanExceptionAction.Error, fex));
+                        new OlanException("启动失败", $"准备或启动游戏时读取所需文件；实例目录={gameData.InstancePath}；实例标识={gameData.InstanceId}；Minecraft={gameData.VersionId}。无法找到启动所需的文件{Environment.NewLine}{fex}", OlanExceptionAction.Error, fex));
         }
         catch (DirectoryNotFoundException fex)
         {
             await OlanExceptionWorker.ForOlanException(
-                        new OlanException("启动失败", $"无法找到启动所需的文件夹{Environment.NewLine}{fex}", OlanExceptionAction.Error, fex));
+                        new OlanException("启动失败", $"准备或启动游戏时访问目录；实例目录={gameData.InstancePath}；实例标识={gameData.InstanceId}；Minecraft={gameData.VersionId}。无法找到启动所需的文件夹{Environment.NewLine}{fex}", OlanExceptionAction.Error, fex));
         }
         catch (Exception ex)
         {
             await OlanExceptionWorker.ForOlanException(
-                        new OlanException("启动失败", $"系统未安装Java或系统错误{Environment.NewLine}{ex}", OlanExceptionAction.Error, ex));
+                        new OlanException("启动失败", $"准备或启动游戏的后台流程；实例目录={gameData.InstancePath}；实例标识={gameData.InstanceId}；Minecraft={gameData.VersionId}。系统未安装Java或系统错误{Environment.NewLine}{ex}", OlanExceptionAction.Error, ex));
         }
         #endregion
         finally

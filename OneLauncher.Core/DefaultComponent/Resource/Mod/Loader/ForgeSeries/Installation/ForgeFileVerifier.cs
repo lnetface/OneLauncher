@@ -27,7 +27,7 @@ internal static class ForgeFileVerifier
     public static async Task RequireAsync(string path, IEnumerable<string> hashes, long size, CancellationToken token)
     {
         if (!await ValidAsync(path, hashes, size, token))
-            throw new OlanException("Forge 文件校验失败", $"文件缺失、长度、摘要或归档结构不正确：{path}");
+            throw new OlanException("Forge 文件校验失败", $"校验 Forge 文件的存在性、长度、摘要和归档结构；文件/目录 path={path}。文件缺失、长度、摘要或归档结构不正确：{path}");
     }
 
     public static async Task CopyAtomicAsync(string source, string target, CancellationToken token)

@@ -58,7 +58,7 @@ internal partial class VersionItem : BaseViewModel
         string path = Path.Combine(Init.GameRootPath,"versions",versionExp.VersionID,"servers");
         if (!Directory.Exists(path))
             OlanExceptionWorker.ForOlanException(
-                new OlanException("无法打开服务端文件夹","服务端尚未初始化",OlanExceptionAction.Error));
+                new OlanException("无法打开服务端文件夹",$"检查服务端初始化结果并打开目录；文件/目录 path={path}。服务端尚未初始化",OlanExceptionAction.Error));
         else
             Tools.OpenFolder(path);
     }

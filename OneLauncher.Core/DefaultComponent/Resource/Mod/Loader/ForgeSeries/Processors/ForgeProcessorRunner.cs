@@ -16,7 +16,7 @@ internal static class ForgeProcessorRunner
         {
             if (!output.Path.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar,
                 OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
-                throw new OlanException("Forge 输出路径无效", output.Path);
+                throw new OlanException("Forge 输出路径无效", ($"执行处理器前验证输出路径边界；参数 java={java}；处理器JAR坐标={processor.Jar}。" + output.Path));
             Directory.CreateDirectory(Path.GetDirectoryName(output.Path)!);
         }
         if (outputs.Count > 0)
@@ -29,7 +29,7 @@ internal static class ForgeProcessorRunner
         var classpath = processor.Classpath.Append(processor.Jar)
             .Select(c => ForgePaths.Under(libraries, ForgePaths.RelativeMaven(c))).Distinct().ToArray();
         foreach (var path in classpath)
-            if (!File.Exists(path)) throw new OlanException("Forge 处理器缺少依赖", path);
+            if (!File.Exists(path)) throw new OlanException("Forge 处理器缺少依赖", ($"执行处理器前检查 classpath 依赖；参数 java={java}；文件/目录 path={path}；处理器JAR坐标={processor.Jar}。" + path));
         var args = processor.Args.Select(tokens.Resolve).ToList();
         // 无 outputs 的步骤也可能写新目录；只为实际位于工作区内的路径准备父目录。
         foreach (var arg in args)
@@ -46,7 +46,7 @@ internal static class ForgeProcessorRunner
         info.ArgumentList.Add(MainClass(jar));
         foreach (var arg in args) info.ArgumentList.Add(arg);
         using var process = new Process { StartInfo = info };
-        if (!process.Start()) throw new OlanException("Forge 处理器启动失败", processor.Jar);
+        if (!process.Start()) throw new OlanException("Forge 处理器启动失败", ($"通过 Java 启动 Forge 处理器进程；参数 java={java}；处理器JAR坐标={processor.Jar}。" + processor.Jar));
         var diagnostics = new Queue<string>();
         void Capture(string line)
         {
@@ -69,7 +69,7 @@ internal static class ForgeProcessorRunner
         }
         await Task.WhenAll(outputPump, errorPump);
         if (process.ExitCode != 0)
-            throw new OlanException("Forge 处理器失败", $"{processor.Jar} 退出码：{process.ExitCode}{Environment.NewLine}{string.Join(Environment.NewLine, diagnostics)}");
+            throw new OlanException("Forge 处理器失败", $"等待 Forge 处理器退出并检查退出码；参数 java={java}；处理器JAR坐标={processor.Jar}。{processor.Jar} 退出码：{process.ExitCode}{Environment.NewLine}{string.Join(Environment.NewLine, diagnostics)}");
         foreach (var output in outputs)
             await ForgeFileVerifier.RequireAsync(output.Path, [output.Hash], 0, token);
     }
@@ -82,11 +82,11 @@ internal static class ForgeProcessorRunner
     private static string MainClass(string path)
     {
         using var archive = ZipFile.OpenRead(path);
-        var entry = archive.GetEntry("META-INF/MANIFEST.MF") ?? throw new OlanException("处理器损坏", $"缺少 MANIFEST：{path}");
+        var entry = archive.GetEntry("META-INF/MANIFEST.MF") ?? throw new OlanException("处理器损坏", $"读取处理器 JAR 的 META-INF/MANIFEST.MF；文件/目录 path={path}。缺少 MANIFEST：{path}");
         using var reader = new StreamReader(entry.Open(), Encoding.UTF8);
         var text = reader.ReadToEnd().Replace("\r\n", "\n").Replace("\n ", "");
         foreach (var line in text.Split('\n'))
             if (line.StartsWith("Main-Class:", StringComparison.OrdinalIgnoreCase)) return line["Main-Class:".Length..].Trim();
-        throw new OlanException("处理器损坏", $"未声明 Main-Class：{path}");
+        throw new OlanException("处理器损坏", $"从处理器 MANIFEST.MF 读取 Main-Class；文件/目录 path={path}。未声明 Main-Class：{path}");
     }
 }

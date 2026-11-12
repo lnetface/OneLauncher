@@ -54,7 +54,7 @@ public class MsalAuthenticator : IDisposable
         {
             throw new OlanException(
                 "验证失败",
-                ex.ToString(),
+                ($"通过 Windows WAM 获取 Microsoft 授权。" + ex.ToString()),
                 OlanExceptionAction.Error,
                 ex);
         }
@@ -183,7 +183,7 @@ public class MsalAuthenticator : IDisposable
             // 当用户在浏览器中明确取消登录时，MSAL会抛出此异常
             throw new OlanException(
                 "操作已取消",
-                "用户取消了 Microsoft 账户的授权操作。",
+                $"刷新 Microsoft 授权时用户拒绝访问。用户取消了 Microsoft 账户的授权操作。",
                 OlanExceptionAction.Warning,
                 ex);
         }
@@ -192,7 +192,7 @@ public class MsalAuthenticator : IDisposable
             // 捕获所有其他来自 MSAL 或后续流程的未知异常
             throw new OlanException(
                 "认证流程异常",
-                $"在认证流程中发生未知错误: {ex.ToString()}",
+                $"刷新 Microsoft 授权并转换 Minecraft 凭据。在认证流程中发生未知错误: {ex.ToString()}",
                 OlanExceptionAction.Error,
                 ex);
         }
@@ -211,37 +211,47 @@ public class MsalAuthenticator : IDisposable
     #region 实现了从微软令牌到麻将令牌
     private async Task<UserModel?> ToLoandauth(string microsoftAccessToken,IAccount account)
     {
+        string diagnosticStep = "请求 Xbox Live 授权";
+        string diagnosticUrl = "https://user.auth.xboxlive.com/user/authenticate";
         try
         {
             var xblAuthResponse = await AuthInXboxLive(microsoftAccessToken);
+            diagnosticStep = "请求 XSTS 授权";
+            diagnosticUrl = "https://xsts.auth.xboxlive.com/xsts/authorize";
             var xstsAuthResponse = await AuthInXSTS(xblAuthResponse.Token, xblAuthResponse.DisplayClaims.Xui[0].Uhs);
 
+            diagnosticStep = "请求 Minecraft 登录凭据";
+            diagnosticUrl = "https://api.minecraftservices.com/authentication/login_with_xbox";
             var mcLoginResponse = await LoginWithXboxAsync(xstsAuthResponse.Token, xstsAuthResponse.DisplayClaims.Xui[0].Uhs);
             if (mcLoginResponse == null)
             {
                 throw new OlanException(
                     "Minecraft 登录失败",
-                    "无法使用Xbox凭据登录Minecraft服务。",
+                    $"解析 Minecraft login_with_xbox 登录响应；请求URL=https://api.minecraftservices.com/authentication/login_with_xbox。无法使用Xbox凭据登录Minecraft服务。",
                     OlanExceptionAction.Error
                 );
             }
 
+            diagnosticStep = "检查 Minecraft 游戏权益";
+            diagnosticUrl = "https://api.minecraftservices.com/entitlements/mcstore";
             var entitlementsResponse = await CheckGameEntitlementsAsync(mcLoginResponse.AccessToken);
             if (entitlementsResponse?.Items == null || entitlementsResponse.Items.Length == 0)
             {
                 throw new OlanException(
                     "未拥有Minecraft",
-                    "该Microsoft账号未拥有Minecraft游戏。请确保您已购买游戏。",
+                    $"检查 Minecraft entitlements 权益响应；请求URL=https://api.minecraftservices.com/entitlements/mcstore。该Microsoft账号未拥有Minecraft游戏。请确保您已购买游戏。",
                     OlanExceptionAction.Error
                 );
             }
 
+            diagnosticStep = "读取 Minecraft 玩家档案";
+            diagnosticUrl = "https://api.minecraftservices.com/minecraft/profile";
             var profileResponse = await GetMinecraftProfileAsync(mcLoginResponse.AccessToken);
             if (profileResponse == null)
             {
                 throw new OlanException(
                     "获取Minecraft档案失败",
-                    "无法获取Minecraft玩家档案。这可能意味着您的Minecraft账号未设置玩家名称或UUID。",
+                    $"读取 Minecraft 玩家档案响应；请求URL=https://api.minecraftservices.com/minecraft/profile。无法获取Minecraft玩家档案。这可能意味着您的Minecraft账号未设置玩家名称或UUID。",
                     OlanExceptionAction.Error
                 );
             }
@@ -263,7 +273,7 @@ public class MsalAuthenticator : IDisposable
         {
             throw new OlanException(
                 "Minecraft认证流程异常",
-                $"在Minecraft认证流程中发生未知错误: {ex.ToString()}",
+                $"转换 Microsoft 凭据的认证流程；当前阶段={diagnosticStep}；请求URL={diagnosticUrl}。在Minecraft认证流程中发生未知错误: {ex.ToString()}",
                 OlanExceptionAction.Error,
                 ex);
         }
@@ -326,35 +336,35 @@ public class MsalAuthenticator : IDisposable
             var errorResponse = await JsonSerializer.DeserializeAsync(response.Content.ReadAsStream(), MsaJsonContext.Default.XSTSErrorResponse);
             if (errorResponse?.XErr == 214891605)
             {
-                throw new OlanException("XSTS 认证失败","该 Xbox Live 账号需要完成资料设置或家长同意。");
+                throw new OlanException("XSTS 认证失败",$"检查 XSTS authorize 错误响应；请求URL=https://xsts.auth.xboxlive.com/xsts/authorize；HTTP状态={(int)response.StatusCode}；XErr={errorResponse?.XErr}。该 Xbox Live 账号需要完成资料设置或家长同意。");
             }
             else if (errorResponse?.XErr == 214891606)
             {
-                throw new OlanException("XSTS 认证失败","该微软账号未关联 Xbox Live 档案。请确保您已登录过 Xbox.com。");
+                throw new OlanException("XSTS 认证失败",$"检查 XSTS authorize 错误响应；请求URL=https://xsts.auth.xboxlive.com/xsts/authorize；HTTP状态={(int)response.StatusCode}；XErr={errorResponse?.XErr}。该微软账号未关联 Xbox Live 档案。请确保您已登录过 Xbox.com。");
             }
             else if (errorResponse?.XErr == 2148916233)
             {
-                throw new OlanException("XSTS 认证失败", "Microsoft帐户没有 Xbox 帐户。");
+                throw new OlanException("XSTS 认证失败", $"检查 XSTS authorize 错误响应；请求URL=https://xsts.auth.xboxlive.com/xsts/authorize；HTTP状态={(int)response.StatusCode}；XErr={errorResponse?.XErr}。Microsoft帐户没有 Xbox 帐户。");
             }
             else if (errorResponse?.XErr == 2148916235)
             {
-                throw new OlanException("XSTS 认证失败", "来自 XBox Live 不可用或被禁止的国家/地区的帐户。");
+                throw new OlanException("XSTS 认证失败", $"检查 XSTS authorize 错误响应；请求URL=https://xsts.auth.xboxlive.com/xsts/authorize；HTTP状态={(int)response.StatusCode}；XErr={errorResponse?.XErr}。来自 XBox Live 不可用或被禁止的国家/地区的帐户。");
             }
             else if (errorResponse?.XErr == 2148916236)
             {
-                throw new OlanException("XSTS 认证失败", "年龄验证必须在 XBox 主页上完成。（韩国）");
+                throw new OlanException("XSTS 认证失败", $"检查 XSTS authorize 错误响应；请求URL=https://xsts.auth.xboxlive.com/xsts/authorize；HTTP状态={(int)response.StatusCode}；XErr={errorResponse?.XErr}。年龄验证必须在 XBox 主页上完成。（韩国）");
             }
             else if (errorResponse?.XErr == 2148916237)
             {
-                throw new OlanException("XSTS 认证失败", "您必须在 XBox 主页上完成成人验证。（韩国）");
+                throw new OlanException("XSTS 认证失败", $"检查 XSTS authorize 错误响应；请求URL=https://xsts.auth.xboxlive.com/xsts/authorize；HTTP状态={(int)response.StatusCode}；XErr={errorResponse?.XErr}。您必须在 XBox 主页上完成成人验证。（韩国）");
             }
             else if (errorResponse?.XErr == 2148916238)
             {
-                throw new OlanException("XSTS 认证失败", "该帐户未满 18 岁，成人必须将该帐户添加到家庭中。");
+                throw new OlanException("XSTS 认证失败", $"检查 XSTS authorize 错误响应；请求URL=https://xsts.auth.xboxlive.com/xsts/authorize；HTTP状态={(int)response.StatusCode}；XErr={errorResponse?.XErr}。该帐户未满 18 岁，成人必须将该帐户添加到家庭中。");
             }
             else
             {
-                throw new OlanException($"XSTS 认证失败",$"{errorResponse?.Message} (XErr: {errorResponse?.XErr})");
+                throw new OlanException($"XSTS 认证失败",$"检查 XSTS authorize 错误响应；请求URL=https://xsts.auth.xboxlive.com/xsts/authorize；HTTP状态={(int)response.StatusCode}；XErr={errorResponse?.XErr}。{errorResponse?.Message} (XErr: {errorResponse?.XErr})");
             }
         }
         using var s = await response.Content.ReadAsStreamAsync();

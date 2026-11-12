@@ -36,7 +36,7 @@ internal sealed partial class TaskCenterPaneViewModel : BaseViewModel, IPaneHost
         if (Dispatcher.UIThread.CheckAccess())
             RefList();
         else
-            Dispatcher.UIThread.Post(RefList);
+            Dispatcher.UIThread.Post(() => RefList());
     }
 
     private void RefList()
@@ -136,7 +136,7 @@ internal sealed partial class TaskInstanceItemViewModel : ObservableObject, IDis
         if (Dispatcher.UIThread.CheckAccess())
             RefreshStatus();
         else
-            Dispatcher.UIThread.Post(RefreshStatus);
+            Dispatcher.UIThread.Post(() => RefreshStatus());
     }
 
     private void OnFinished() => RefreshStatusFromEvent();
@@ -148,7 +148,7 @@ internal sealed partial class TaskInstanceItemViewModel : ObservableObject, IDis
         if (Dispatcher.UIThread.CheckAccess())
             RefreshStatus();
         else
-            Dispatcher.UIThread.Post(RefreshStatus);
+            Dispatcher.UIThread.Post(() => RefreshStatus());
     }
 
     public void RefreshStatus()

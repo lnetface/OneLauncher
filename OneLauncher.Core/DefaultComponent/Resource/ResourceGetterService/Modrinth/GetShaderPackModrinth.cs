@@ -26,9 +26,9 @@ internal static class GetShaderPackModrinth
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
 
         if (document.RootElement.ValueKind != JsonValueKind.Array)
-            throw new OlanException("安装光影包失败", $"项目 {projectId} 返回了无效的版本列表。");
+            throw new OlanException("安装光影包失败", $"解析 Modrinth 光影版本列表；参数 projectId={projectId}；参数 versionId={versionId}；文件/目录 shaderPackPath={shaderPackPath}；请求URL url={url}。项目 {projectId} 返回了无效的版本列表。");
         if (document.RootElement.GetArrayLength() == 0)
-            throw new OlanException("安装光影包失败", $"项目 {projectId} 没有适配 Minecraft {versionId} 的光影包版本。");
+            throw new OlanException("安装光影包失败", $"筛选匹配 Minecraft 的光影版本；参数 projectId={projectId}；参数 versionId={versionId}；文件/目录 shaderPackPath={shaderPackPath}；请求URL url={url}。项目 {projectId} 没有适配 Minecraft {versionId} 的光影包版本。");
 
         // Modrinth 版本列表按发布时间从新到旧返回；依赖字段只读取为元数据，不发起依赖请求。
         var version = document.RootElement[0].Deserialize(ModrinthGetJsonContext.Default.ModrinthProjects);
@@ -36,7 +36,7 @@ internal static class GetShaderPackModrinth
         if (file == null || !Uri.TryCreate(file.Url, UriKind.Absolute, out var downloadUri)
             || (downloadUri.Scheme != Uri.UriSchemeHttps && downloadUri.Scheme != Uri.UriSchemeHttp))
         {
-            throw new OlanException("安装光影包失败", $"项目 {projectId} 的版本缺少有效的下载文件。");
+            throw new OlanException("安装光影包失败", $"选择光影版本的有效下载文件；参数 projectId={projectId}；参数 versionId={versionId}；文件/目录 shaderPackPath={shaderPackPath}；请求URL url={url}。项目 {projectId} 的版本缺少有效的下载文件。");
         }
 
         // 远端文件名只能是单个文件，防止写出 shaderpacks 目录。
@@ -45,7 +45,7 @@ internal static class GetShaderPackModrinth
             || Path.IsPathRooted(filename) || filename.Contains('/') || filename.Contains('\\')
             || filename.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         {
-            throw new OlanException("安装光影包失败", $"项目 {projectId} 返回了无效的文件名。");
+            throw new OlanException("安装光影包失败", $"校验光影下载文件名的目录边界；参数 projectId={projectId}；参数 versionId={versionId}；文件/目录 shaderPackPath={shaderPackPath}；请求URL url={url}；文件/目录 filename={filename}。项目 {projectId} 返回了无效的文件名。");
         }
 
         cancellationToken.ThrowIfCancellationRequested();

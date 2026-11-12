@@ -42,6 +42,8 @@ public class AutoUpdate
         }
         catch (Exception ex)
         {
+            if (ex is not OlanException)
+                _ = new OlanException("检查更新失败", $"请求并解析启动器最新版本；请求URL={CheckUpdateUrl}；当前版本={Init.ApplicationVersoin}。原因：{ex.Message}", OlanExceptionAction.Warning, ex);
             /*无关紧要，忽略就好*/
             return false;
         }
@@ -52,8 +54,7 @@ public class AutoUpdate
         {
 #if ONELAUNCHER_TARGET_WINDOWS
             var path = Path.Combine(Init.BasePath, "install.ps1");
-            await Init.Download.DownloadFile
-                (UpdaterUrlWindows, path);
+            await Init.Download.DownloadFile(UpdaterUrlWindows, path);
             using var process = new Process();
             process.StartInfo = new ProcessStartInfo()
             {
@@ -65,6 +66,8 @@ public class AutoUpdate
         }
         catch (Exception ex)
         {
+            if (ex is not OlanException)
+                _ = new OlanException("更新启动器失败", $"下载并启动更新脚本；请求URL={UpdaterUrlWindows}；脚本文件={Init.BasePath}/install.ps1。原因：{ex.Message}", OlanExceptionAction.Warning, ex);
             Debug.WriteLine(ex);
         }
     }

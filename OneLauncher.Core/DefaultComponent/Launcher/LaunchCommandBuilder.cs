@@ -140,7 +140,7 @@ public partial class LaunchCommandBuilder
             ModEnum.quilt => await QuiltStrategy.CreateAsync(versionPath, basePath),
             ModEnum.neoforge => await NeoForgeStrategy.CreateAsync(versionPath, basePath, versionId),
             ModEnum.forge => await ForgeStrategy.CreateAsync(versionPath, basePath, versionId),
-            _ => throw new OlanException("内部异常",$"不支持的模组加载器 {modType}")
+            _ => throw new OlanException("内部异常",$"根据加载器类型创建启动参数策略；加载器={modType}；版本目录={versionPath}；游戏目录={gamePath}。不支持的模组加载器 {modType}")
         };
         return strategy;
     }

@@ -18,6 +18,6 @@ internal class MicrosoftBuildofOpenJDKGetter : BaseJavaProvider, IJavaProvider
         string fileExtension = systemTypeName == "windows" ? "zip" : "tar.gz";
         string osName = systemTypeName == "macos" ? "macOS" : systemTypeName;
         string downloadUrl = $"https://aka.ms/download-jdk/microsoft-jdk-{javaVersion}-{osName}-{systemArchName}.{fileExtension}";
-        return GetAndDownloadAsync(() => Task.FromResult<string?>(downloadUrl), progress);
+        return GetAndDownloadAsync(() => Task.FromResult<string?>(downloadUrl), progress, downloadUrl);
     }
 }

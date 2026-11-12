@@ -27,7 +27,7 @@ public class MinecraftServerManger
             await File.ReadAllTextAsync(Path.Combine(versionPath,"version.json"))
             ,Global.Init.GameRootPath);
         if (versionInfo.info.Downloads?.Server == null)
-            throw new OlanException("无法初始化服务端","当前版本不支持服务端",OlanExceptionAction.Error);
+            throw new OlanException("无法初始化服务端",$"读取版本元数据并检查服务端下载项；文件/目录 versionPath={versionPath}。当前版本不支持服务端",OlanExceptionAction.Error);
         
         await Global.Init.Download.DownloadFileAndSha1(
             versionInfo.info.Downloads.Server.Url,

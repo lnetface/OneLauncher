@@ -99,7 +99,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         }
         catch (Exception ex)
         {
-            await OlanExceptionWorker.ForOlanException(ex as OlanException ?? new OlanException("无法保存 JVM 配置", ex.Message, OlanExceptionAction.Error, ex));
+            await OlanExceptionWorker.ForOlanException(ex as OlanException ?? new OlanException("无法保存 JVM 配置", ($"保存 JVM 优化模式到配置文件；配置文件={Path.Combine(Init.BasePath, "config.json")}。" + ex.Message), OlanExceptionAction.Error, ex));
         }
         finally
         {
@@ -675,7 +675,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         }
 
         await OlanExceptionWorker.ForOlanException(new OlanException("安装路径已更改",
-            "更改游戏安装路径不会复制原有的游戏文件与数据，请自行迁移；新路径将在重启启动器后生效。",
+            $"保存安装路径后的重启提醒；文件/目录 previousPath={previousPath}；配置文件={Path.Combine(Init.BasePath, "config.json")}。更改游戏安装路径不会复制原有的游戏文件与数据，请自行迁移；新路径将在重启启动器后生效。",
             OlanExceptionAction.FatalError));
     }
 
@@ -688,7 +688,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         {
             var topLevel = TopLevel.GetTopLevel(MainWindow.mainwindow);
             if (topLevel?.StorageProvider is not { CanPickFolder: true } storageProvider)
-                throw new OlanException("无法选择安装路径", "当前环境无法打开文件夹选择器，请手动输入路径后点击应用。");
+                throw new OlanException("无法选择安装路径", $"选择自定义安装目录时检查系统文件选择器；配置文件={Path.Combine(Init.BasePath, "config.json")}。当前环境无法打开文件夹选择器，请手动输入路径后点击应用。");
 
             var folders = await storageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
@@ -715,7 +715,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         try
         {
             if (string.IsNullOrWhiteSpace(CustomInstallPath))
-                throw new OlanException("安装路径不能为空", "请输入游戏安装路径，或点击选择路径选择文件夹。");
+                throw new OlanException("安装路径不能为空", $"应用自定义安装路径前校验输入；配置文件={Path.Combine(Init.BasePath, "config.json")}。请输入游戏安装路径，或点击选择路径选择文件夹。");
 
             await SaveInstallPathAsync(CustomInstallPath.Trim());
         }
@@ -788,6 +788,21 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
 
     #endregion
     [RelayCommand]
+    private async Task UpdateLauncher()
+    {
+        WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("正在准备启动器更新"));
+        try
+        {
+            await Task.Run(AutoUpdate.Update);
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("更新操作已结束"));
+        }
+        catch (Exception ex)
+        {
+            await ShowSettingsException(ex);
+        }
+    }
+
+    [RelayCommand]
     public void OpenGithub()
     {
         Tools.OpenWebsite(Init.ProjectWebsite);
@@ -848,7 +863,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
             // 异常处理中的静态调用暂时保留，因为这是更深层次的重构问题
             throw new OlanException(
                 "内部异常",
-                "配置文件特定部分设置部分为空，这可能是新版和旧版配置文件不兼容导致的",
+                $"初始化设置页面并读取配置字段；配置文件={Path.Combine(Init.BasePath, "config.json")}。配置文件特定部分设置部分为空，这可能是新版和旧版配置文件不兼容导致的",
                 OlanExceptionAction.FatalError,
                 ex,
                () =>

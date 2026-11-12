@@ -45,12 +45,12 @@ internal class NeoForgeStrategy : IModArgStrategy
                 { "classpath_separator" , ":" }
 #endif
             };
-        return ForgeLaunchArguments.Expand(_parser.info.Arguments?.Jvm)
+        return ForgeLaunchArguments.Expand(_parser.info.Arguments?.Jvm, Path.Combine(_basePath, "versions", _versionID, "version.neoforge.json") + ": arguments.jvm")
             .Select(arg => ForgeLaunchArguments.Encode(Tools.ReplacePlaceholders(arg, placeholders)));
     }
 
     public IEnumerable<string> GetAdditionalGameArgs() => _parser.info.Arguments == null
-        ? ForgeLaunchArguments.LegacyGame(_parser.info.MinecraftArguments)
-        : ForgeLaunchArguments.Expand(_parser.info.Arguments.Game)
+        ? ForgeLaunchArguments.LegacyGame(_parser.info.MinecraftArguments, Path.Combine(_basePath, "versions", _versionID, "version.neoforge.json") + ": minecraftArguments")
+        : ForgeLaunchArguments.Expand(_parser.info.Arguments.Game, Path.Combine(_basePath, "versions", _versionID, "version.neoforge.json") + ": arguments.game")
             .Select(ForgeLaunchArguments.Encode);
 }

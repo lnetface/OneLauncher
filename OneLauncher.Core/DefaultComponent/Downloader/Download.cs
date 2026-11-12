@@ -78,11 +78,11 @@ internal partial class Download : IDisposable
 
             long downloadedSize = targetStream.Length;
             if (downloadedSize == 0)
-                throw new OlanException("下载失败", "服务端返回了空文件。");
+                throw new OlanException("下载失败", $"下载大文件后检查文件是否为空；请求URL url={url}；文件/目录 savePath={savePath}；参数 knownSize={knownSize}；参数 maxSegments={maxSegments}。服务端返回了空文件。");
             if (knownSize.HasValue && downloadedSize != knownSize.Value)
                 throw new OlanException(
                     "下载失败",
-                    $"下载文件大小不一致，预期 {knownSize.Value} 字节，实际 {downloadedSize} 字节。");
+                    $"下载大文件后核对文件长度；请求URL url={url}；文件/目录 savePath={savePath}；参数 knownSize={knownSize}；参数 maxSegments={maxSegments}。下载文件大小不一致，预期 {knownSize.Value} 字节，实际 {downloadedSize} 字节。");
 
             segmentProgress?.Report((0, downloadedSize - 1));
             return;
@@ -90,11 +90,11 @@ internal partial class Download : IDisposable
 
         ContentRangeHeaderValue? probeRange = probeResponse.Content.Headers.ContentRange;
         if (probeRange?.From != 0 || probeRange?.To != 0)
-            throw new OlanException("下载失败", "服务端返回了无效的分段范围。");
+            throw new OlanException("下载失败", $"探测 HTTP Range 响应的 Content-Range；请求URL url={url}；文件/目录 savePath={savePath}；参数 knownSize={knownSize}；参数 maxSegments={maxSegments}。服务端返回了无效的分段范围。");
 
         long fileSize = probeRange.Length
                         ?? knownSize
-                        ?? throw new OlanException("下载失败", "无法确定文件大小。");
+                        ?? throw new OlanException("下载失败", $"根据 Range 响应确定下载文件大小；请求URL url={url}；文件/目录 savePath={savePath}；参数 knownSize={knownSize}；参数 maxSegments={maxSegments}。无法确定文件大小。");
         probeResponse.Dispose();
 
         long interval = (fileSize + maxSegments - 1) / maxSegments;
@@ -234,7 +234,7 @@ internal partial class Download : IDisposable
                                 continue;
                             }
                         }
-                        throw new OlanException("下载失败", "重试到达阈值抛出", OlanExceptionAction.Error, ex);
+                        throw new OlanException("下载失败", $"批量下载文件在首次请求失败后重试三次仍失败；请求URL={item.url}；目标文件={item.path}。原因：{ex.Message}", OlanExceptionAction.Error, ex);
                     }
                     catch (OperationCanceledException) when (ct.IsCancellationRequested)
                     {
@@ -261,7 +261,7 @@ internal partial class Download : IDisposable
                 using (var httpStream = await response.Content.ReadAsStreamAsync(cancellationToken))
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(savepath)
-                        ?? throw new OlanException("写入文件失败",$"无法找到文件'{savepath}'所对应的文件夹"));
+                        ?? throw new OlanException("写入文件失败",$"下载前确定目标文件的父目录；请求URL url={url}；文件/目录 temporaryPath={temporaryPath}。无法找到文件'{savepath}'所对应的文件夹"));
                     using (var fileStream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 8192, useAsync: true))
                     {
                         await httpStream.CopyToAsync(fileStream, 8192,cancellationToken);
@@ -321,7 +321,7 @@ internal partial class Download : IDisposable
                             {
                                 throw new OlanException(
                                     "下载失败",
-                                    $"无法校验文件({savepath})Sha1，实际：{calculatedSha1}预期：{sha1}",
+                                    $"下载文件后校验 SHA-1；请求URL url={url}；文件/目录 temporaryPath={temporaryPath}。无法校验文件({savepath})Sha1，实际：{calculatedSha1}预期：{sha1}",
                                     OlanExceptionAction.Warning);
                             }
                         }
@@ -373,7 +373,7 @@ internal partial class Download : IDisposable
             {
                 throw new OlanException(
                   "安全验证异常",
-                  $"无法校验文件({item.path})Sha1，实际：{calculatedSha1}预期：{item.sha1}{Environment.NewLine}您的电脑可能被黑客入侵了",
+                  $"校验本地资源文件 SHA-1。无法校验文件({item.path})Sha1，实际：{calculatedSha1}预期：{item.sha1}{Environment.NewLine}您的电脑可能被黑客入侵了",
                   OlanExceptionAction.FatalError);
             }
         }

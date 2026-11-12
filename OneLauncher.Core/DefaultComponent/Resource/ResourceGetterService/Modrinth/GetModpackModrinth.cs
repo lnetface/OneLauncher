@@ -17,7 +17,7 @@ internal static class GetModpackModrinth
         await using var metadata = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(metadata, cancellationToken: cancellationToken);
         if (document.RootElement.ValueKind != JsonValueKind.Array || document.RootElement.GetArrayLength() == 0)
-            throw new OlanException("获取整合包失败", $"项目 {projectId} 没有可安装的整合包版本。");
+            throw new OlanException("获取整合包失败", $"筛选 Modrinth 可安装整合包版本；参数 projectId={projectId}；请求URL url={url}。项目 {projectId} 没有可安装的整合包版本。");
 
         var version = document.RootElement[0].Deserialize(ModrinthGetJsonContext.Default.ModrinthProjects);
         var files = version?.Files?.Where(file =>
@@ -25,7 +25,7 @@ internal static class GetModpackModrinth
         var file = files?.FirstOrDefault(file => file.Primary) ?? files?.FirstOrDefault();
         if (file == null || !Uri.TryCreate(file.Url, UriKind.Absolute, out var downloadUri)
             || (downloadUri.Scheme != Uri.UriSchemeHttps && downloadUri.Scheme != Uri.UriSchemeHttp))
-            throw new OlanException("获取整合包失败", $"项目 {projectId} 缺少有效的 .mrpack 下载文件。");
+            throw new OlanException("获取整合包失败", $"选择整合包 .mrpack 下载文件；参数 projectId={projectId}；请求URL url={url}。项目 {projectId} 缺少有效的 .mrpack 下载文件。");
 
         // 网络流先异步写入唯一临时文件，供 ZIP 随机读取和后续安装复用。
         string temporaryPath = Path.Combine(Path.GetTempPath(), $"olan-pack-{Guid.NewGuid():N}.mrpack");
@@ -46,9 +46,9 @@ internal static class GetModpackModrinth
 
             using var archive = ZipFile.OpenRead(temporaryPath);
             var entry = archive.GetEntry("modrinth.index.json")
-                ?? throw new OlanException("整合包无效", "压缩包内未找到 modrinth.index.json 文件。");
+                ?? throw new OlanException("整合包无效", $"打开下载的 .mrpack 并定位清单；参数 projectId={projectId}；请求URL url={url}；文件/目录 temporaryPath={temporaryPath}。压缩包内未找到 modrinth.index.json 文件。");
             using var manifestStream = entry.Open();
-            var parser = new MrpackParser(manifestStream);
+            var parser = new MrpackParser(manifestStream, $"{temporaryPath}；下载URL={file.Url}");
             // 提前读取侧栏与导入必需的信息，解析失败时清理下载文件。
             parser.GetMinecraftVersion();
             parser.GetLoaderInfo();

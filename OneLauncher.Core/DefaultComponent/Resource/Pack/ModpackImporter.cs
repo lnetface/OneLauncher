@@ -78,10 +78,10 @@ public class ModpackImporter : IDisposable
 
         string manifestPath = Path.Combine(_tempWorkDir, "modrinth.index.json");
         if (!File.Exists(manifestPath))
-            throw new OlanException("整合包无效", "压缩包内未找到 modrinth.index.json 文件。", OlanExceptionAction.Error);
+            throw new OlanException("整合包无效", $"解压整合包并创建独立游戏实例；文件/目录 packPath={packPath}；文件/目录 manifestPath={manifestPath}。压缩包内未找到 modrinth.index.json 文件。", OlanExceptionAction.Error);
 
         await using var manifestStream = File.OpenRead(manifestPath);
-        var parser = _parser ?? new MrpackParser(manifestStream);
+        var parser = _parser ?? new MrpackParser(manifestStream, packPath);
 
         // --- 步骤 2: 创建游戏实例 ---
         progress.Report((DownProgress.Meta, 0, 0, "正在创建游戏实例..."));
@@ -98,7 +98,7 @@ public class ModpackImporter : IDisposable
         if (!string.Equals(Path.GetDirectoryName(instancePath), instanceRoot, StringComparison.OrdinalIgnoreCase)
             || Directory.Exists(instancePath) || File.Exists(instancePath)
             || _gameDataManager.GetInstanceFromId(packGameData.InstanceId) != null)
-            throw new OlanException("创建实例失败", $"实例目录无效或已存在：{instancePath}");
+            throw new OlanException("创建实例失败", $"解压整合包并创建独立游戏实例；文件/目录 packPath={packPath}；文件/目录 manifestPath={manifestPath}；文件/目录 instancePath={instancePath}。实例目录无效或已存在：{instancePath}");
 
         bool registered = false;
         bool registrationLockHeld = false;

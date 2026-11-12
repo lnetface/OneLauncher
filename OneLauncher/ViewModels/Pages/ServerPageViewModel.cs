@@ -159,10 +159,12 @@ internal partial class ServerPageViewModel : BaseViewModel,IPageHost,IListTempla
         {
             return await Task.Run(() => serverEntry.Ping).ConfigureAwait(false);
         }
-        catch
+        catch (Exception ex)
         {
             // A malformed host or an unavailable ICMP provider should only hide the
             // optional indicator; it must not prevent the server card from rendering.
+            if (ex is not OlanException)
+                _ = new OlanException("服务器延迟探测失败", $"后台探测服务器延迟；服务器={serverEntry.ReadableAddress}。原因：{ex.Message}", OlanExceptionAction.Warning, ex);
             return null;
         }
     }
@@ -242,7 +244,7 @@ internal partial class ServerPageViewModel : BaseViewModel,IPageHost,IListTempla
             await OlanExceptionWorker.ForOlanException(
                 new OlanException(
                     "启动失败",
-                    $"没有找到服务器对应的游戏实例：{serverEntry.InstanceId}",
+                    $"为收藏服务器查找关联的游戏实例；实例索引文件={Path.Combine(Init.GameRootPath, "instance", "instance.json")}；实例标识={serverEntry.InstanceId}。没有找到服务器对应的游戏实例：{serverEntry.InstanceId}",
                     OlanExceptionAction.Error));
             return;
         }

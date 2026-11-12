@@ -73,7 +73,7 @@ internal partial class EditGameDataPaneViewModel : BaseViewModel, IPaneHost
         {
             throw new OlanException(
                 "无法更新游戏数据",
-                "尝试更新一个不存在的游戏数据实例",
+                $"更新实例索引中已有的游戏数据；实例标识={editingGameData.InstanceId}；实例目录={editingGameData.InstancePath}。尝试更新一个不存在的游戏数据实例",
                 OlanExceptionAction.Error, e);
         }
     }

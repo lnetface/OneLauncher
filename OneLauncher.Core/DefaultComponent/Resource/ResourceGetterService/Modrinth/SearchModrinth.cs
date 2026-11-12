@@ -36,7 +36,7 @@ public class SearchModrinth
         await using var jsonResponse = await response.Content.ReadAsStreamAsync(cancellationToken);
         info = await JsonSerializer.DeserializeAsync(
             jsonResponse, ModrinthSearchJsonContext.Default.ModrinthSearch, cancellationToken);
-        return info ?? throw new OlanException("无法搜索资源信息", "Modrinth 返回了无效的搜索结果。");
+        return info ?? throw new OlanException("无法搜索资源信息", $"GET Modrinth 搜索结果并反序列化；请求URL searchUrl={searchUrl}。Modrinth 返回了无效的搜索结果。");
     }
 }
 

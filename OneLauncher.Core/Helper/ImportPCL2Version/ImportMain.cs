@@ -54,7 +54,7 @@ public class PCL2Importer
 
         var versionsDir = new DirectoryInfo(pclInstancePath).Parent;
         string pclMinecraftRoot = versionsDir?.Parent?.FullName
-                                  ?? throw new OlanException("导入失败", "无法确定PCL2的 .minecraft 根目录。");
+                                  ?? throw new OlanException("导入失败", $"定位并读取 PCL2 导入源的版本配置；文件/目录 pclInstancePath={pclInstancePath}；文件/目录 pclVersionJsonPath={pclVersionJsonPath}；参数 mcVersion={mcVersion}。无法确定PCL2的 .minecraft 根目录。");
 
         // 3. **核心改进：使用 Planner 制定计划**
         _progress?.Report((DownProgress.Meta, 0, 0, "正在规划文件迁移与下载..."));
@@ -139,6 +139,6 @@ public class PCL2Importer
         var anyJson = Directory.EnumerateFiles(versionPath, "*.json").FirstOrDefault();
         if (anyJson != null) return anyJson;
 
-        throw new OlanException("导入失败", $"在 '{versionPath}' 中未找到任何 .json 配置文件。");
+        throw new OlanException("导入失败", $"定位并读取 PCL2 导入源的版本配置；文件/目录 versionPath={versionPath}；文件/目录 primaryJsonPath={primaryJsonPath}。在 '{versionPath}' 中未找到任何 .json 配置文件。");
     }
 }

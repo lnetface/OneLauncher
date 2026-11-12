@@ -96,7 +96,7 @@ public partial class PowerPlayPaneViewModel : BaseViewModel, IPaneHost
         try
         {
             if (SelectedHostGameData == null)
-                throw new OlanException("未能创建房间", "请先在下拉框中选择一个要进行联机的游戏版本。", OlanExceptionAction.Warning);
+                throw new OlanException("未能创建房间", $"创建联机房间前检查所选游戏实例；端口输入={JoinPort}。请先在下拉框中选择一个要进行联机的游戏版本。", OlanExceptionAction.Warning);
 
             string p2pNodeName = "OLANNODE" + RandomNumberGenerator.GetInt32(100000, 1000000000);
             string combinedInfo = $"{p2pNodeName}:{SelectedHostGameData.VersionId}";
@@ -123,10 +123,10 @@ public partial class PowerPlayPaneViewModel : BaseViewModel, IPaneHost
         try
         {
             if (string.IsNullOrWhiteSpace(JoinRoomCode))
-                throw new OlanException("输入无效", "必须输入房间码。", OlanExceptionAction.Warning);
+                throw new OlanException("输入无效", $"加入联机房间前检查房间码是否为空；端口输入={JoinPort}。必须输入房间码。", OlanExceptionAction.Warning);
 
             if (string.IsNullOrWhiteSpace(JoinPort) || !int.TryParse(JoinPort, out int destPort) || destPort is < 1 or > 65535)
-                throw new OlanException("输入无效", "请输入一个有效的目标端口号 (1-65535)。", OlanExceptionAction.Warning);
+                throw new OlanException("输入无效", $"加入联机房间前校验本地端口范围；端口输入={JoinPort}。请输入一个有效的目标端口号 (1-65535)。", OlanExceptionAction.Warning);
 
             string p2pNodeName;
             string versionId = string.Empty;
@@ -149,7 +149,7 @@ public partial class PowerPlayPaneViewModel : BaseViewModel, IPaneHost
                     isMCTMode = true;
                 }
                 else
-                    throw new OlanException("房间码无效", "无法解析此房间码，请确认是否从OneLauncher主机处复制。", OlanExceptionAction.Error);
+                    throw new OlanException("房间码无效", $"解析 OneLauncher 房间码的节点与游戏版本；参数 versionId={versionId}；端口输入={JoinPort}。无法解析此房间码，请确认是否从OneLauncher主机处复制。", OlanExceptionAction.Error);
                 
             }
 
@@ -169,7 +169,7 @@ public partial class PowerPlayPaneViewModel : BaseViewModel, IPaneHost
 
                 if (!allInstancesForVersion.Any())
                 {
-                    throw new OlanException("加入失败", $"你还没有安装版本 {versionId} 的任何游戏实例。", OlanExceptionAction.Error);
+                    throw new OlanException("加入失败", $"为联机目标版本查找已安装实例；参数 versionId={versionId}；端口输入={JoinPort}。你还没有安装版本 {versionId} 的任何游戏实例。", OlanExceptionAction.Error);
                 }
 
                 // 查找或设置要启动的实例

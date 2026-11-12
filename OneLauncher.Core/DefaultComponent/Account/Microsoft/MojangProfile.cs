@@ -138,7 +138,7 @@ public class MojangProfile : IDisposable
                 }
                 catch (HttpRequestException e)
                 {
-                    throw new OlanException("无法上传皮肤", "在再次尝试后依旧捕获到网络错误", OlanExceptionAction.Error, e);
+                    throw new OlanException("无法上传皮肤", $"请求皮肤服务或下载并保存头像；请求URL requestUrl={requestUrl}。在再次尝试后依旧捕获到网络错误", OlanExceptionAction.Error, e);
                 }
             }
             response.EnsureSuccessStatusCode();
@@ -182,7 +182,7 @@ public class MojangProfile : IDisposable
         {
             throw new OlanException(
                 "网络异常",
-                $"无法从服务器下载皮肤图片{Environment.NewLine}点击 忽略 按钮忽略这个错误并使用史蒂夫皮肤图片",
+                $"请求皮肤服务或下载并保存头像；文件/目录 outputPath={outputPath}；请求URL sessionUrl={sessionUrl}。无法从服务器下载皮肤图片{Environment.NewLine}点击 忽略 按钮忽略这个错误并使用史蒂夫皮肤图片",
                 OlanExceptionAction.Error,
                 ex);
         }

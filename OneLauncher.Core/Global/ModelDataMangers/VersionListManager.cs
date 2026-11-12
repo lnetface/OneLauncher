@@ -1,3 +1,4 @@
+using OneLauncher.Core.Global;
 using OneLauncher.Core.Helper.Models;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -51,7 +52,7 @@ public sealed class VersionListManager : BasicDataManager<VersionListData>
     {
         ArgumentNullException.ThrowIfNull(installedVersion);
         if (!IsValidVersionId(installedVersion.VersionID))
-            throw new OlanException("版本登记失败", "版本 ID 必须是有效的单级目录名。");
+            throw new OlanException("版本登记失败", $"校验版本登记信息及所属安装目录；版本索引文件={ConfigPath}；待登记版本={installedVersion.VersionID}。版本 ID 必须是有效的单级目录名。");
         var incoming = Clone(installedVersion);
         await _operationLock.WaitAsync(cancellationToken);
         try
@@ -91,7 +92,7 @@ public sealed class VersionListManager : BasicDataManager<VersionListData>
             ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         if (!string.Equals(root, GameRootPath, comparison))
             throw new OlanException("安装目录不匹配",
-                $"版本索引属于 {GameRootPath}，不能用于 {root}。请重新初始化对应安装目录。");
+                $"校验版本登记信息及所属安装目录；文件/目录 gameRootPath={gameRootPath}；版本索引文件={ConfigPath}。版本索引属于 {GameRootPath}，不能用于 {root}。请重新初始化对应安装目录。");
     }
 
     private async Task CommitAsync(List<UserVersion> versions)

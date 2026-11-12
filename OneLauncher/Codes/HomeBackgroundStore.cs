@@ -83,7 +83,7 @@ internal static class HomeBackgroundStore
         }
         catch (Exception ex) when (warnOnInvalid && ex is not OlanException)
         {
-            throw new OlanException("无法设置主页背景", $"所选文件不是可用的图片：{ex.Message}", OlanExceptionAction.Warning, ex);
+            throw new OlanException("无法设置主页背景", $"读取图片并转码保存主页背景；文件/目录 sourcePath={sourcePath}；目标背景文件={Path.Combine(Init.BasePath, FileName)}。所选文件不是可用的图片：{ex.Message}", OlanExceptionAction.Warning, ex);
         }
         finally
         {

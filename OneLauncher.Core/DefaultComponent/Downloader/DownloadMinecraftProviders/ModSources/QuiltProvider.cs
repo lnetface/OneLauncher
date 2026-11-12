@@ -35,7 +35,7 @@ internal class QuiltProvider : IModLoaderConcreteProviders
         using JsonDocument document = JsonDocument.Parse(rep);
         JsonElement selectedElement = SelectLoader(document.RootElement);
         var info = selectedElement.Deserialize(FabricJsonContext.Default.FabricRoot)
-        ?? throw new OlanException("内部错误", "无法解析Quilt元数据");
+        ?? throw new OlanException("内部错误", $"读取 Quilt loader 元数据并选择兼容加载器；文件/目录 quiltMetaFilePath={quiltMetaFilePath}；请求URL={$"https://meta.quiltmc.org/v3/versions/loader/{_context.ID}"}。无法解析Quilt元数据");
 
         // 写入到文件
         using (FileStream fs = new FileStream(quiltMetaFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 0, true))
@@ -85,6 +85,6 @@ internal class QuiltProvider : IModLoaderConcreteProviders
         }
         return selectedVersion != null
             ? selected
-            : fallback ?? throw new OlanException("下载失败", $"Quilt 未提供 Minecraft {_context.ID} 可用的加载器");
+            : fallback ?? throw new OlanException("下载失败", $"读取 Quilt loader 元数据并选择兼容加载器；请求URL={$"https://meta.quiltmc.org/v3/versions/loader/{_context.ID}"}。Quilt 未提供 Minecraft {_context.ID} 可用的加载器");
     }
 }

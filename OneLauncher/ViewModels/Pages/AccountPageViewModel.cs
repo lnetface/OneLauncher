@@ -124,7 +124,7 @@ internal partial class AccountPageViewModel : BaseViewModel, IPageHost, IListTem
             {
                 throw new OlanException(
                     "内部异常",
-                    "配置文件特定部分账户部分为空，这可能是新版和旧版配置文件不兼容导致的",
+                    $"读取账户配置并构建账户页面列表；账户配置文件={Path.Combine(Init.BasePath, "playerdata", "account.json")}。配置文件特定部分账户部分为空，这可能是新版和旧版配置文件不兼容导致的",
                     OlanExceptionAction.FatalError,
                     ex,
                    () =>

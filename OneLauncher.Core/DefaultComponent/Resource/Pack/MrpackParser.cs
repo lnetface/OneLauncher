@@ -14,9 +14,11 @@ namespace OneLauncher.Core.DefaultComponent.Resource.Pack;
 public class MrpackParser
 {
     private readonly ModrinthManifest _manifest;
+    private readonly string _diagnosticSource;
 
-    public MrpackParser(Stream manifestStream)
+    public MrpackParser(Stream manifestStream, string diagnosticSource = "内存清单流（未提供来源文件）")
     {
+        _diagnosticSource = diagnosticSource;
         try
         {
             _manifest = JsonSerializer.Deserialize(manifestStream, MrpackJsonContext.Default.ModrinthManifest)
@@ -24,7 +26,7 @@ public class MrpackParser
         }
         catch (JsonException ex)
         {
-            throw new OlanException("解析失败", "无法解析 modrinth.index.json。文件可能已损坏或格式不正确。", OlanExceptionAction.Error, ex);
+            throw new OlanException("解析失败", $"反序列化整合包的 modrinth.index.json；来源文件/URL={_diagnosticSource}；归档条目=modrinth.index.json。无法解析 modrinth.index.json。文件可能已损坏或格式不正确。", OlanExceptionAction.Error, ex);
         }
     }
 
@@ -35,7 +37,7 @@ public class MrpackParser
         if (_manifest.Dependencies.TryGetValue("minecraft", out var version))
             return version;
 
-        throw new OlanException("清单格式错误", "在 dependencies 中找不到指定的 'minecraft' 版本。", OlanExceptionAction.Error);
+        throw new OlanException("清单格式错误", $"读取清单 dependencies.minecraft 字段；来源文件/URL={_diagnosticSource}；归档条目=modrinth.index.json。在 dependencies 中找不到指定的 'minecraft' 版本。", OlanExceptionAction.Error);
     }
 
     public (ModEnum Type, string Version) GetLoaderInfo()
@@ -54,7 +56,7 @@ public class MrpackParser
 
         var unsupportedLoader = _manifest.Dependencies.Keys.FirstOrDefault(k => k.Contains("loader"));
         if (unsupportedLoader != null)
-            throw new OlanException("加载器不兼容", $"该整合包需要 '{unsupportedLoader}' 加载器，当前启动器暂不支持。", OlanExceptionAction.Error);
+            throw new OlanException("加载器不兼容", $"识别清单 dependencies 中的加载器；来源文件/URL={_diagnosticSource}；归档条目=modrinth.index.json。该整合包需要 '{unsupportedLoader}' 加载器，当前启动器暂不支持。", OlanExceptionAction.Error);
 
         // 没有 loader 依赖时表示原版实例。
         return (ModEnum.none, string.Empty);

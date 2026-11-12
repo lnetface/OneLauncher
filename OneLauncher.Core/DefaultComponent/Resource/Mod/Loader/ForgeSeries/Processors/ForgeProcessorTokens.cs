@@ -40,17 +40,17 @@ internal sealed class ForgeProcessorTokens
     {
         if (_context.TryGetValue(name, out var context)) return context;
         if (_cache.TryGetValue(name, out var cached)) return cached;
-        if (_visiting.Count >= 32 || !_visiting.Add(name)) throw new OlanException("Forge 引用无效", $"循环或过深的占位符：{name}");
+        if (_visiting.Count >= 32 || !_visiting.Add(name)) throw new OlanException("Forge 引用无效", $"解析处理器占位符时检查递归深度与循环引用；安装包来源={_prepared.DiagnosticSource}；工作目录={_root}；库目录={_libraries}。循环或过深的占位符：{name}");
         try
         {
             if (_prepared.Profile.Data?.Placeholders.TryGetValue(name, out var element) != true)
-                throw new OlanException("Forge 引用无效", $"未定义的客户端占位符：{name}");
+                throw new OlanException("Forge 引用无效", $"解析处理器客户端占位符定义；安装包来源={_prepared.DiagnosticSource}；工作目录={_root}；库目录={_libraries}。未定义的客户端占位符：{name}");
             if (element.ValueKind == JsonValueKind.Object)
             {
                 if (!element.TryGetProperty("client", out element))
-                    throw new OlanException("Forge 引用无效", $"占位符没有 client 值：{name}");
+                    throw new OlanException("Forge 引用无效", $"读取处理器占位符的 client 字段；安装包来源={_prepared.DiagnosticSource}；工作目录={_root}；库目录={_libraries}。占位符没有 client 值：{name}");
             }
-            if (element.ValueKind != JsonValueKind.String) throw new OlanException("Forge 引用无效", $"占位符不是字符串：{name}");
+            if (element.ValueKind != JsonValueKind.String) throw new OlanException("Forge 引用无效", $"检查处理器占位符值的 JSON 类型；安装包来源={_prepared.DiagnosticSource}；工作目录={_root}；库目录={_libraries}。占位符不是字符串：{name}");
             return _cache[name] = Resolve(element.GetString()!);
         }
         finally { _visiting.Remove(name); }
@@ -58,20 +58,20 @@ internal sealed class ForgeProcessorTokens
 
     public string Resolve(string value)
     {
-        if (value.Length > 32768) throw new OlanException("Forge 引用无效", "安装参数过长。");
+        if (value.Length > 32768) throw new OlanException("Forge 引用无效", $"展开处理器参数后检查长度；安装包来源={_prepared.DiagnosticSource}；工作目录={_root}；库目录={_libraries}。安装参数过长。");
         if (value.StartsWith("'") && value.EndsWith("'")) return value[1..^1];
         if (value.StartsWith('[') && value.EndsWith(']'))
             return ForgePaths.Under(_libraries, ForgePaths.RelativeMaven(value));
         if (value.StartsWith('/'))
         {
-            if (!_extractResources) throw new OlanException("Forge 输出配置无效", "处理器输出不能引用安装器内嵌资源。");
+            if (!_extractResources) throw new OlanException("Forge 输出配置无效", $"解析处理器输出中的内嵌资源引用；安装包来源={_prepared.DiagnosticSource}；工作目录={_root}；库目录={_libraries}。处理器输出不能引用安装器内嵌资源。");
             var entryName = ForgePaths.EntryName(value);
             var target = ForgePaths.Under(_resources, entryName);
             if (!File.Exists(target))
             {
                 using var stream = new MemoryStream(_prepared.Installer, false);
                 using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
-                var entry = archive.GetEntry(entryName) ?? throw new OlanException("Forge 安装包损坏", $"缺少资源：{value}");
+                var entry = archive.GetEntry(entryName) ?? throw new OlanException("Forge 安装包损坏", $"读取安装包内嵌资源条目；参数 entryName={entryName}；安装包来源={_prepared.DiagnosticSource}；工作目录={_root}；库目录={_libraries}。缺少资源：{value}");
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 entry.ExtractToFile(target, true);
             }
@@ -79,13 +79,13 @@ internal sealed class ForgeProcessorTokens
         }
         var resolved = Regex.Replace(value, @"\{([A-Za-z_][A-Za-z0-9_]*)\}", m => Key(m.Groups[1].Value),
             RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
-        if (resolved.Contains('{') || resolved.Contains('}')) throw new OlanException("Forge 引用无效", $"无法解析的参数：{value}");
+        if (resolved.Contains('{') || resolved.Contains('}')) throw new OlanException("Forge 引用无效", $"展开处理器参数后检查残留占位符；安装包来源={_prepared.DiagnosticSource}；工作目录={_root}；库目录={_libraries}。无法解析的参数：{value}");
         if (Path.IsPathFullyQualified(resolved))
         {
             var normalized = Path.GetFullPath(resolved);
             if (normalized != _root && !normalized.StartsWith(_root + Path.DirectorySeparatorChar,
                 OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
-                throw new OlanException("Forge 引用无效", $"路径超出本次工作目录：{value}");
+                throw new OlanException("Forge 引用无效", $"解析处理器参数文件路径并检查目录边界；安装包来源={_prepared.DiagnosticSource}；工作目录={_root}；库目录={_libraries}。路径超出本次工作目录：{value}");
             return normalized;
         }
         return resolved;

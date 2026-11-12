@@ -29,16 +29,16 @@ public abstract class YggdrasilAuthenticator
         if (!authResponse.IsSuccessStatusCode)
         {
             var error = await authResponse.Content.ReadFromJsonAsync<ErrorResponse>(YggdrasilJsonContext.Default.ErrorResponse);
-            throw new OlanException("认证失败", error?.ErrorMessage ?? "服务器返回了未知的错误。", OlanExceptionAction.Error);
+            throw new OlanException("认证失败", ($"检查 Yggdrasil 认证响应状态；请求URL authUrl={authUrl}；请求URL={authResponse.RequestMessage?.RequestUri}；HTTP状态={(int)authResponse.StatusCode}。" + (error?.ErrorMessage ?? "服务器返回了未知的错误。")), OlanExceptionAction.Error);
         }
         if (!metaResponse.IsSuccessStatusCode)
         {
-            throw new OlanException("认证失败", "无法获取认证服务器的元数据。", OlanExceptionAction.Error);
+            throw new OlanException("认证失败", $"检查 Yggdrasil 元数据响应状态；请求URL authUrl={authUrl}；请求URL={metaResponse.RequestMessage?.RequestUri}；HTTP状态={(int)metaResponse.StatusCode}。无法获取认证服务器的元数据。", OlanExceptionAction.Error);
         }
 
         var authData = await authResponse.Content.ReadFromJsonAsync<AuthResponse>(YggdrasilJsonContext.Default.AuthResponse);
         if (authData?.SelectedProfile == null)
-            throw new OlanException("认证失败", "服务器未返回有效的玩家档案。", OlanExceptionAction.Error);
+            throw new OlanException("认证失败", $"解析 Yggdrasil selectedProfile 玩家档案；请求URL authUrl={authUrl}；请求URL={authResponse.RequestMessage?.RequestUri}；HTTP状态={(int)authResponse.StatusCode}。服务器未返回有效的玩家档案。", OlanExceptionAction.Error);
 
         return new UserModel(
             UserID: userId,
@@ -74,14 +74,14 @@ public abstract class YggdrasilAuthenticator
         }
         catch (Exception ex) when (ex is not OlanException)
         {
-            throw new OlanException("网络错误", $"连接到认证服务器 '{AuthApiRoot}' 时出错: {ex.Message}", OlanExceptionAction.Error, ex);
+            throw new OlanException("网络错误", $"请求 Yggdrasil authenticate 并读取元数据；认证URL={endpoint}；元数据URL={AuthApiRoot}。原因：{ex.Message}", OlanExceptionAction.Error, ex);
         }
     }
 
     public async Task<UserModel> RefreshAccessTokenAsync(UserModel userToRefresh)
     {
         if (userToRefresh.YggdrasilInfo == null)
-            throw new OlanException("认证错误", "用户信息中缺少 Yggdrasil 信息，无法刷新会话。", OlanExceptionAction.Error);
+            throw new OlanException("认证错误", $"刷新 Yggdrasil 会话前检查账户认证信息；账户ID={userToRefresh.UserID}；账户配置文件={Init.BasePath}/playerdata/account.json。用户信息中缺少 Yggdrasil 信息，无法刷新会话。", OlanExceptionAction.Error);
 
         var yggdrasilInfo = userToRefresh.YggdrasilInfo.Value;
         var endpoint = $"{yggdrasilInfo.AuthUrl}/authserver/refresh";
@@ -99,7 +99,7 @@ public abstract class YggdrasilAuthenticator
         }
         catch (Exception ex) when (ex is not OlanException)
         {
-            throw new OlanException("网络错误", $"刷新会话时出错: {ex.Message}", OlanExceptionAction.Error, ex);
+            throw new OlanException("网络错误", $"请求 Yggdrasil refresh 并解析响应；请求URL={endpoint}；元数据URL={yggdrasilInfo.AuthUrl}。原因：{ex.Message}", OlanExceptionAction.Error, ex);
         }
     }
 }

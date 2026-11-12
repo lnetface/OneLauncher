@@ -118,7 +118,7 @@ internal class RaceDownloader
         if(successfulResponse == null)
         {
             // 如果依旧没有成功的响应，抛出异常
-            throw new OlanException("下载失败","所有下载源均无法访问头");
+            throw new OlanException("下载失败",$"获取下载响应时所有候选源均失败；目标文件=详见各下载源请求，响应头获取失败；请求URL列表={string.Join(" | ", item.Select(candidate => candidate.url))}；目标文件列表={string.Join(" | ", item.Select(candidate => candidate.path))}。所有下载源均无法访问头");
         }
         #endregion
 

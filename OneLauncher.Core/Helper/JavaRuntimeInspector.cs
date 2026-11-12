@@ -1,3 +1,4 @@
+using OneLauncher.Core.Global;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
@@ -72,7 +73,7 @@ public static class JavaRuntimeInspector
             if (CapabilityCache.TryGetValue(key, out bool cached)) return cached;
             var probe = await RunProbeAsync(probePath, ["-Xms16m", "-Xmx64m", .. flags, "-version"], cancellationToken);
             if (probe.Diagnostic != null)
-                throw new Global.OlanException("无法检查 JVM 参数", probe.Diagnostic);
+                throw new Global.OlanException("无法检查 JVM 参数", ($"启动 Java 进程探测 JVM 参数兼容性；文件/目录 probePath={probePath}。" + probe.Diagnostic));
             bool supported = probe.ExitCode == 0;
             if (CapabilityCache.Count > 128) CapabilityCache.Clear();
             CapabilityCache[key] = supported;

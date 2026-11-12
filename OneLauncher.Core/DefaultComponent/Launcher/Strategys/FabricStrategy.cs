@@ -24,7 +24,7 @@ internal class FabricStrategy : IModArgStrategy
         await using var fs = File.OpenRead(fabricJsonPath);
         return new FabricStrategy(new FabricVJParser(
             await JsonSerializer.DeserializeAsync<FabricRoot>(fs,FabricJsonContext.Default.FabricRoot)
-            ?? throw new OlanException("启动失败",$"在解析文件'{fabricJsonPath}'时出错"),basePath));
+            ?? throw new OlanException("启动失败",$"反序列化 Fabric 启动配置文件；文件/目录 versionPath={versionPath}；文件/目录 basePath={basePath}；文件/目录 fabricJsonPath={fabricJsonPath}。在解析文件'{fabricJsonPath}'时出错"),basePath));
     }
 
     public string? GetMainClassOverride() => _fabricParser.GetMainClass();

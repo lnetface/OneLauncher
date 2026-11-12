@@ -1,4 +1,5 @@
-﻿using OneLauncher.Core.Global.ModelDataMangers;
+﻿using OneLauncher.Core.Global;
+using OneLauncher.Core.Global.ModelDataMangers;
 using OneLauncher.Core.Helper.Models;
 using System;
 using System.Collections.Generic;
@@ -64,7 +65,7 @@ public class AccountManager : BasicDataManager<AccountData>
         // 从 this.Data 中获取默认用户ID
         if (Data.DefaultUserID.HasValue)
             return Data.UserDictionary.GetValueOrDefault(Data.DefaultUserID.Value);
-        else throw new OlanException("没有默认用户", "请先设置一个默认用户模型。", OlanExceptionAction.Error);
+        else throw new OlanException("没有默认用户", $"读取默认账户或校验删除账户条件；账户配置文件={ConfigPath}。请先设置一个默认用户模型。", OlanExceptionAction.Error);
     }
 
     public Task AddUser(UserModel user)
@@ -76,7 +77,7 @@ public class AccountManager : BasicDataManager<AccountData>
     public Task RemoveUser(Guid userId)
     {
         if (Data.UserDictionary.Count <= 1)
-            throw new OlanException("拒绝访问", "你至少要有一个有效的用户模型");
+            throw new OlanException("拒绝访问", $"读取默认账户或校验删除账户条件；账户配置文件={ConfigPath}。你至少要有一个有效的用户模型");
 
         if (Data.UserDictionary.Remove(userId))
         {

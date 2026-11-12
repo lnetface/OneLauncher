@@ -37,7 +37,7 @@ internal static class ForgeRealmsProcessor
         // 官方工具支持显式 --json/--libs，避免它推导出工作目录以外的路径。
         var args = processor.Args.ToList();
         if (args.Contains("--json") || args.Contains("--libs"))
-            throw new OlanException("Forge Realms 配置不受支持", "DEOBF_REALMS 具有自定义目录参数。");
+            throw new OlanException("Forge Realms 配置不受支持", $"解析 DEOBF_REALMS 处理器输出配置；版本配置文件={source}；工作目录={work}；处理器JAR={processor.Jar}。DEOBF_REALMS 具有自定义目录参数。");
         args.AddRange(["--json", "{ROOT}/minecraft.json", "--libs", "{LIBRARY_DIR}"]);
         return new ForgeSeriesProcessor { Jar = processor.Jar, Classpath = processor.Classpath, Args = args, Outputs = processor.Outputs, Sides = processor.Sides };
     }

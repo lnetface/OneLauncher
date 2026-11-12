@@ -28,11 +28,11 @@ internal static class JvmOptimizationPolicy
 
     internal static HeapRecommendation CalculateHeap(OptimizationMode mode, SystemMemoryHelper.MemoryMetrics? memory, bool? is64Bit, bool modded, int modCount, long? explicitInitialBytes = null, long? explicitMaximumBytes = null)
     {
-        if (!Enum.IsDefined(mode)) throw Error("未知的 JVM 优化模式。");
-        if (explicitInitialBytes is <= 0 || explicitMaximumBytes is <= 0) throw Error("堆大小必须为正数；结构化配置中 0 表示自动。");
+        if (!Enum.IsDefined(mode)) throw Error($"计算自动堆预算时校验优化模式；模式={mode}。未知的 JVM 优化模式。");
+        if (explicitInitialBytes is <= 0 || explicitMaximumBytes is <= 0) throw Error($"计算堆预算时校验手动堆大小；Xms字节数={explicitInitialBytes}；Xmx字节数={explicitMaximumBytes}。堆大小必须为正数；结构化配置中 0 表示自动。");
         if (explicitMaximumBytes.HasValue)
         {
-            if (explicitInitialBytes > explicitMaximumBytes) throw Error("初始堆 Xms 不能大于最大堆 Xmx。");
+            if (explicitInitialBytes > explicitMaximumBytes) throw Error($"计算堆预算时比较手动堆大小；Xms字节数={explicitInitialBytes}；Xmx字节数={explicitMaximumBytes}。初始堆 Xms 不能大于最大堆 Xmx。");
             return new HeapRecommendation(explicitInitialBytes.HasValue ? null : (int)Math.Min(512, explicitMaximumBytes.Value / 1048576), null, 0, 0);
         }
         if (!memory.HasValue || !SystemMemoryHelper.IsValid(memory.Value))
@@ -45,14 +45,14 @@ internal static class JvmOptimizationPolicy
         double multiplier = mode switch { OptimizationMode.Conservative => .75, OptimizationMode.Aggressive => 1.25, _ => 1 };
         double demand = (modded ? 3072 + 8.0 * Math.Max(0, modCount) : 2048) * multiplier;
         int alignedBudget = (int)(Math.Floor(budget / 128) * 128);
-        if (alignedBudget < MinimumAutomaticMiB) throw Error("可用内存不足，请关闭其他程序或明确配置内存。");
+        if (alignedBudget < MinimumAutomaticMiB) throw Error($"计算自动堆预算；可用内存={memory.Value.FreeMB}MiB；对齐后预算={alignedBudget}MiB；最低要求={MinimumAutomaticMiB}MiB。可用内存不足，请关闭其他程序或明确配置内存。");
         double initialMiB = explicitInitialBytes.GetValueOrDefault() / 1048576.0;
-        if (initialMiB > alignedBudget) throw Error("自动内存预算无法容纳手动设置的 Xms，请降低初始堆或明确设置 Xmx。");
+        if (initialMiB > alignedBudget) throw Error($"比较初始堆与自动内存预算；Xms={initialMiB}MiB；预算={alignedBudget}MiB。自动内存预算无法容纳手动设置的 Xms，请降低初始堆或明确设置 Xmx。");
         int maximum = (int)(Math.Floor(Math.Min(budget, Math.Max(demand, initialMiB)) / 128) * 128);
         if (initialMiB > maximum)
         {
             maximum = (int)(Math.Ceiling(initialMiB / 128) * 128);
-            if (maximum > alignedBudget) throw Error("自动内存预算无法容纳手动设置的 Xms，请降低初始堆或明确设置 Xmx。");
+            if (maximum > alignedBudget) throw Error($"对齐最大堆后校验内存预算；Xms={initialMiB}MiB；Xmx={maximum}MiB；预算={alignedBudget}MiB。自动内存预算无法容纳手动设置的 Xms，请降低初始堆或明确设置 Xmx。");
         }
         return new HeapRecommendation(explicitInitialBytes.HasValue ? null : Math.Min(maximum, 512), maximum, budget, demand);
     }
@@ -97,7 +97,7 @@ internal static class JvmOptimizationPolicy
         string? maximum = maximumSelection.Token, initial = initialSelection.Token;
         long? maximumBytes = maximum != null ? ParseHeapBytes(maximum) : null;
         long? initialBytes = initial != null ? ParseHeapBytes(initial) : null;
-        if (initialBytes > maximumBytes) throw Error("初始堆 Xms 不能大于最大堆 Xmx。");
+        if (initialBytes > maximumBytes) throw Error($"合并 JVM 参数后比较堆大小；Java文件={runtime.ExecutablePath}；Xms={initial}；Xmx={maximum}。初始堆 Xms 不能大于最大堆 Xmx。");
         var generated = new List<string>();
         if (optimize)
         {
@@ -117,12 +117,12 @@ internal static class JvmOptimizationPolicy
         bool baseline = !overriddenGc && collector == "UseG1GC";
         if (collector != null && runtime.IsHotSpot)
         {
-            if (collector == "UseZGC" && runtime.MajorVersion < 11) throw Error("当前 Java 不支持 ZGC，请使用兼容的运行时或其他 GC。");
+            if (collector == "UseZGC" && runtime.MajorVersion < 11) throw Error($"校验 ZGC 的 Java 版本要求；Java文件={runtime.ExecutablePath}；Java主版本={runtime.MajorVersion}。当前 Java 不支持 ZGC，请使用兼容的运行时或其他 GC。");
             if (collector is "UseZGC" or "UseShenandoahGC" or "UseEpsilonGC" && runtime.MajorVersion is >= 11 and < 15)
                 generated.Add("-XX:+UnlockExperimentalVMOptions");
         }
         else if (collector != null && !baseline && !runtime.IsHotSpot)
-            throw Error("无法确认此 Java 支持所选的 HotSpot GC 参数，请检查运行时或移除 GC 设置。");
+            throw Error($"校验垃圾收集器与 Java 虚拟机兼容性；Java文件={runtime.ExecutablePath}；虚拟机={runtime.VmName}；GC={collector}。无法确认此 Java 支持所选的 HotSpot GC 参数，请检查运行时或移除 GC 设置。");
 
         // Remove collector-specific tuning from lower-priority sources when the collector is overridden.
         var normal = new List<string>();
@@ -167,7 +167,7 @@ internal static class JvmOptimizationPolicy
                 .Where(CanProbe).Select(Unquote)
                 .ToArray();
             if (checkedFlags.Length > 0 && !await (supportsArguments ?? JavaRuntimeInspector.SupportsArgumentsAsync)(runtime, checkedFlags, cancellationToken))
-                throw Error("当前 Java 不接受所选 JVM／GC 参数，请检查自定义参数或重新选择优化模式。");
+                throw Error($"执行 Java 参数支持探测；Java文件={runtime.ExecutablePath}；探测参数={string.Join(" ", checkedFlags)}。当前 Java 不接受所选 JVM／GC 参数，请检查自定义参数或重新选择优化模式。");
         }
         normal.InsertRange(0, generated.Distinct());
         return new JvmArgumentResult(normal, command);
@@ -176,9 +176,9 @@ internal static class JvmOptimizationPolicy
     private static void AddG1Options(List<string> args, JvmArguments config, JavaRuntimeInfo runtime)
     {
         if (config.MaxGCPauseMillis < 0 || config.G1HeapRegionSize < 0 || config.G1NewSizePercent < 0 || config.G1MaxNewSizePercent < 0 || config.G1ReservePercent < 0)
-            throw Error("G1 参数不能为负数，0 表示不指定。");
+            throw Error($"校验 G1 参数符号；Java文件={runtime.ExecutablePath}；MaxGCPauseMillis={config.MaxGCPauseMillis}；G1HeapRegionSize={config.G1HeapRegionSize}；G1NewSizePercent={config.G1NewSizePercent}；G1MaxNewSizePercent={config.G1MaxNewSizePercent}；G1ReservePercent={config.G1ReservePercent}。G1 参数不能为负数，0 表示不指定。");
         if (config.G1NewSizePercent > 100 || config.G1MaxNewSizePercent > 100 || config.G1ReservePercent > 100 || config.G1NewSizePercent > 0 && config.G1MaxNewSizePercent > 0 && config.G1NewSizePercent > config.G1MaxNewSizePercent)
-            throw Error("G1 百分比参数范围不正确。");
+            throw Error($"校验 G1 百分比范围与大小关系；Java文件={runtime.ExecutablePath}；G1NewSizePercent={config.G1NewSizePercent}；G1MaxNewSizePercent={config.G1MaxNewSizePercent}；G1ReservePercent={config.G1ReservePercent}。G1 百分比参数范围不正确。");
         if (config.MaxGCPauseMillis > 0) args.Add($"-XX:MaxGCPauseMillis={config.MaxGCPauseMillis}");
         if (config.G1NewSizePercent > 0 || config.G1MaxNewSizePercent > 0 || config.UseAikarFlags) args.Add("-XX:+UnlockExperimentalVMOptions");
         if (config.G1NewSizePercent > 0) args.Add($"-XX:G1NewSizePercent={config.G1NewSizePercent}");
@@ -225,7 +225,7 @@ internal static class JvmOptimizationPolicy
             value = value[..^1];
         }
         if (factor == 0 || !long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out long size) || size <= 0 || size > long.MaxValue / factor)
-            throw Error("无效的堆大小，请使用正整数和 k／m／g／t 单位。");
+            throw Error($"解析 JVM 堆大小参数；参数={token}。无效的堆大小，请使用正整数和 k／m／g／t 单位。");
         return size * factor;
     }
 
@@ -245,7 +245,7 @@ internal static class JvmOptimizationPolicy
     private static string? SelectedCollector(List<string> tokens)
     {
         var enabled = tokens.Where(token => token.StartsWith("-XX:+", StringComparison.Ordinal)).Select(token => token[5..] switch { "UseParallelOldGC" => "UseParallelGC", "UseParNewGC" => "UseConcMarkSweepGC", var name => name }).Distinct().ToArray();
-        if (enabled.Length > 1) throw Error("同时启用了多个互斥 GC，请只保留一种垃圾收集器。");
+        if (enabled.Length > 1) throw Error($"合并 JVM 参数时检查 GC 互斥；启用的GC={string.Join(", ", enabled)}。同时启用了多个互斥 GC，请只保留一种垃圾收集器。");
         return enabled.FirstOrDefault();
     }
     private static string? TuningFamily(string token)
@@ -276,10 +276,10 @@ internal static class JvmOptimizationPolicy
             }
             slashes = character == '\\' ? slashes + 1 : 0;
         }
-        if (quoted) throw Error("JVM 参数的双引号没有闭合。");
+        if (quoted) throw Error($"解析 JVM 参数引号；参数长度={fragment.Length}；未完成参数起始位置={start}。JVM 参数的双引号没有闭合。");
         if (start >= 0) yield return fragment[start..];
     }
 
     private static string Unquote(string token) => token.Length >= 2 && token[0] == '"' && token[^1] == '"' ? token[1..^1] : token;
-    private static OlanException Error(string message) => new("JVM 配置无效", message);
+    private static OlanException Error(string message) => new("JVM 配置无效", ($"校验与合并 JVM 堆大小和垃圾回收参数。" + message));
 }

@@ -89,7 +89,7 @@ public class JavaManager
                 JavaProvider.MicrosoftOpenJDK => new MicrosoftBuildofOpenJDKGetter(version),
                 JavaProvider.OracleGraalVM => new GraalVMGetter(version),
                 JavaProvider.OracleJDK => new OracleJDK(version),
-                _ => throw new OlanException("内部错误","不支持的Java提供商。")
+                _ => throw new OlanException("内部错误",$"为 Java 安装选择运行时提供商；参数 provider={provider}。不支持的Java提供商。")
             };
 
             javaProvider.CancelToken = token;

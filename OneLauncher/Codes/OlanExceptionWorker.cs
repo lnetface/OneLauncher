@@ -31,11 +31,13 @@ internal class OlanExceptionWorker
             }
         });
     }
-    public static Task ForUnknowException(Exception exception, Action TryAgainFunction = null)
+    public static Task ForUnknowException(Exception exception, Action TryAgainFunction = null,
+        [System.Runtime.CompilerServices.CallerMemberName] string operation = "",
+        [System.Runtime.CompilerServices.CallerFilePath] string sourceFile = "")
     {
         return Dispatcher.UIThread.InvokeAsync(async () =>
         {
-            await new ExceptionTip(new OlanException("出现未知错误",exception.ToString(),OlanExceptionAction.Error,exception,TryAgainFunction)).ShowDialog(MainWindow.mainwindow);
+            await new ExceptionTip(new OlanException("出现未知错误",$"执行 {operation} 时发生未知错误；调用源文件={sourceFile}。{Environment.NewLine}{exception}",OlanExceptionAction.Error,exception,TryAgainFunction)).ShowDialog(MainWindow.mainwindow);
         });
     }
 }

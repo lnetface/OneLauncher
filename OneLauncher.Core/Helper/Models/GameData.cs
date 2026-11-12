@@ -33,7 +33,7 @@ public class GameData
     {
         if (this.DefaultUserModelID != null)
             return UnitedCore.Core.AccountManager.GetUser(this.DefaultUserModelID.Value)
-                ?? throw new OlanException("内部启动操作失败", "找不到对应的账户");
+                ?? throw new OlanException("内部启动操作失败", $"为游戏实例解析指定账户；实例标识={InstanceId}；实例目录={InstancePath}；账户配置文件={Path.Combine(Init.BasePath, "playerdata", "account.json")}。找不到对应的账户");
         else
             return UnitedCore.Core.AccountManager.GetDefaultUser();
     }

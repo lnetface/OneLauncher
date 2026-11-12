@@ -137,7 +137,7 @@ public class UserModel
                 if(r == null)
                 {
                     r = this;
-                    task.SetFailed(new OlanException("刷新失败，返回当前实例。","失败",OlanExceptionAction.Warning));
+                    task.SetFailed(new OlanException("刷新失败，返回当前实例。",$"刷新账户凭据后检查认证返回结果；账户配置文件={Path.Combine(Init.BasePath, "playerdata", "account.json")}；账户类型={UserType}。失败",OlanExceptionAction.Warning));
                 }
                 else
                 {
@@ -156,8 +156,10 @@ public class UserModel
                 return newUser;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            if (ex is not OlanException)
+                _ = new OlanException("账户刷新失败", $"刷新账户登录状态；账户ID={UserID}；账户类型={UserType}；账户配置文件={Init.BasePath}/playerdata/account.json。原因：{ex.Message}", OlanExceptionAction.Warning, ex);
             // 刷新过程中发生异常，返回当前实例。
             return this;
         }

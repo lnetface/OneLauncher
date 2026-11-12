@@ -41,16 +41,16 @@ internal sealed class ForgeSeriesInstallTasker
         response.EnsureSuccessStatusCode();
         var bytes = await response.Content.ReadAsByteArrayAsync(timeout.Token);
         reportStatus?.Invoke($"{modType} 安装包下载完成，正在解析安装协议及依赖...");
-        try { _prepared = ForgeInstallerParser.Parse(bytes, modType, versionId, _libraries); }
+        try { _prepared = ForgeInstallerParser.Parse(bytes, modType, versionId, _libraries, installerUrl); }
         catch (Exception ex) when (ex is JsonException or InvalidDataException)
-        { throw new OlanException($"{modType} 安装包无效", "归档或 JSON 结构不正确。", OlanExceptionAction.Error, ex); }
+        { throw new OlanException($"{modType} 安装包无效", $"下载并准备安装包或执行处理器；请求URL installerUrl={installerUrl}；参数 modType={modType}；参数 versionId={versionId}。归档或 JSON 结构不正确。", OlanExceptionAction.Error, ex); }
         reportStatus?.Invoke($"已确定 {_prepared.Protocol} 协议、{_prepared.Processors.Count} 个客户端处理器和 {_prepared.Downloads.Count} 个下载依赖。");
         return _prepared.Downloads;
     }
 
     public async Task RunProcessorsAsync(string mainJarPath, string javaPath, CancellationToken token)
     {
-        var prepared = _prepared ?? throw new OlanException("安装顺序错误", "必须先准备 Forge 安装包。");
+        var prepared = _prepared ?? throw new OlanException("安装顺序错误", $"下载并准备安装包或执行处理器；文件/目录 mainJarPath={mainJarPath}；文件/目录 javaPath={javaPath}。必须先准备 Forge 安装包。");
         // Forge 与 NeoForge 共享 libraries；同一游戏根的发布必须串行。
         var gate = InstallLocks.GetOrAdd(_root, _ => new(1, 1));
         await gate.WaitAsync(token);

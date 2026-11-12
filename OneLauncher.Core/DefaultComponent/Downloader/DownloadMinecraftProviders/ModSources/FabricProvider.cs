@@ -37,7 +37,7 @@ internal class FabricProvider : IModLoaderConcreteProviders
         {
             info = (await _context.SpecifiedFabricVersion.GetDownloadFiles())
                 .Deserialize(FabricJsonContext.Default.FabricRoot)
-                ?? throw new OlanException("内部错误", "无法解析Fabric文本");
+                ?? throw new OlanException("内部错误", $"读取 Fabric loader 元数据并解析版本配置；文件/目录 fabricMetaFilePath={fabricMetaFilePath}；请求URL={$"https://meta.fabricmc.net/v2/versions/loader/{_context.ID}"}。无法解析Fabric文本");
         }
         // 如果没有指定Fabric版本，从API返回的第一个数据取最新的版本
         else
@@ -47,7 +47,7 @@ internal class FabricProvider : IModLoaderConcreteProviders
             using JsonDocument document = JsonDocument.Parse(rep);
             JsonElement firstElement = document.RootElement[0];
             info = firstElement.Deserialize(FabricJsonContext.Default.FabricRoot)
-                ?? throw new OlanException("内部错误", "无法解析Fabric文本");
+                ?? throw new OlanException("内部错误", $"读取 Fabric loader 元数据并解析版本配置；文件/目录 fabricMetaFilePath={fabricMetaFilePath}；请求URL={$"https://meta.fabricmc.net/v2/versions/loader/{_context.ID}"}。无法解析Fabric文本");
         }
         // 写入到文件
         using (FileStream fs = new FileStream(fabricMetaFilePath, FileMode.Create, FileAccess.Write,FileShare.None,0,true))

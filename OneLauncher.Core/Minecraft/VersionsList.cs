@@ -36,7 +36,7 @@ public class VersionsList
 
         await using var fs = File.OpenRead(filePath);
         var fullManifest = await JsonSerializer.DeserializeAsync<MinecraftVersionList>(fs, MinecraftJsonContext.Default.MinecraftVersionList)
-            ?? throw new OlanException("无法解析版本列表", $"反序列化文件'{filePath}'时出错，文件可能已损坏。");
+            ?? throw new OlanException("无法解析版本列表", $"读取并反序列化缓存的 Minecraft 版本清单；文件/目录 filePath={filePath}；请求URL={VersionListUrl}。反序列化文件'{filePath}'时出错，文件可能已损坏。");
 
         // 调用筛选方法，并更新全局的静态列表
         var releaseVersions = GetReleaseVersionList(fullManifest);

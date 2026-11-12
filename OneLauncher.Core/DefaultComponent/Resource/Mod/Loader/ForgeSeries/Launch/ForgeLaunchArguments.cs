@@ -36,39 +36,39 @@ internal static class ForgeLaunchArguments
         return allowed;
     }
 
-    public static IEnumerable<string> Expand(IEnumerable<JsonElement>? arguments)
+    public static IEnumerable<string> Expand(IEnumerable<JsonElement>? arguments, string diagnosticSource = "直接输入 arguments 数组")
     {
         foreach (var arg in arguments ?? [])
         {
             if (arg.ValueKind == JsonValueKind.String) { yield return arg.GetString()!; continue; }
-            if (arg.ValueKind != JsonValueKind.Object) throw new OlanException("Forge 参数无效", "参数必须是字符串或规则对象。");
+            if (arg.ValueKind != JsonValueKind.Object) throw new OlanException("Forge 参数无效", $"展开 Forge arguments 数组并检查元素类型；来源文件/字段={diagnosticSource}。参数必须是字符串或规则对象。");
             var rules = arg.TryGetProperty("rules", out var r) ? r.EnumerateArray().ToList() : null;
             if (!Allowed(rules)) continue;
             var value = arg.GetProperty("value");
             if (value.ValueKind == JsonValueKind.String) yield return value.GetString()!;
             else if (value.ValueKind == JsonValueKind.Array)
                 foreach (var item in value.EnumerateArray()) yield return item.GetString()!;
-            else throw new OlanException("Forge 参数无效", "规则参数 value 格式不正确。");
+            else throw new OlanException("Forge 参数无效", $"读取 Forge 规则参数 value 字段；来源文件/字段={diagnosticSource}。规则参数 value 格式不正确。");
         }
     }
 
-    public static IEnumerable<string> LegacyGame(string? arguments)
+    public static IEnumerable<string> LegacyGame(string? arguments, string diagnosticSource = "直接输入 minecraftArguments")
     {
-        var tokens = Tokenize(arguments ?? "");
+        var tokens = Tokenize(arguments ?? "", diagnosticSource);
         // 公共账户和目录参数由 Builder 生成，只追加加载器专用参数。
         for (var i = 0; i < tokens.Count; i++)
         {
             if (tokens[i] == "--tweakClass")
             {
                 if (++i >= tokens.Count || tokens[i].Contains("${", StringComparison.Ordinal))
-                    throw new OlanException("Forge 参数无效", "缺少有效的 tweakClass。");
+                    throw new OlanException("Forge 参数无效", $"读取旧版 minecraftArguments 的 tweakClass；来源文件/字段={diagnosticSource}。缺少有效的 tweakClass。");
                 yield return "--tweakClass";
                 yield return tokens[i];
             }
         }
     }
 
-    public static List<string> Tokenize(string value)
+    public static List<string> Tokenize(string value, string diagnosticSource = "直接输入启动参数文本")
     {
         var tokens = new List<string>();
         var token = new StringBuilder();
@@ -89,7 +89,7 @@ internal static class ForgeLaunchArguments
             }
             else { token.Append(c); started = true; }
         }
-        if (quote != '\0') throw new OlanException("启动参数无效", "参数引号未闭合。");
+        if (quote != '\0') throw new OlanException("启动参数无效", $"分词启动参数并检查引号配对；来源文件/字段={diagnosticSource}。参数引号未闭合。");
         if (started) tokens.Add(token.ToString());
         return tokens;
     }

@@ -63,7 +63,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
     {
         string host = GetServerHost(ServerInfo.Ip);
         if (host.Length == 0 || ServerInfo.Port == 0)
-            throw new OlanException("保存游戏服务器列表失败", "服务器地址或端口无效");
+            throw new OlanException("保存游戏服务器列表失败", $"写入 servers.dat 前校验服务器地址；服务器图标文件={IconFileUrl}；目标文件={Path.Combine(Init.GameRootPath, "servers.dat")}；服务器地址={ReadableAddress}。服务器地址或端口无效");
 
         string instancePath = Path.Combine(Init.GameRootPath, "instance", InstanceId);
         string path = Path.Combine(instancePath, "servers.dat");
@@ -121,7 +121,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or NbtFormatException)
             {
-                throw new OlanException("保存游戏服务器列表失败", $"无法保存 {path}：{ex.Message}",
+                throw new OlanException("保存游戏服务器列表失败", $"读取、更新并原子保存 servers.dat；文件/目录 instancePath={instancePath}；文件/目录 path={path}；文件/目录 temporaryPath={temporaryPath}；服务器图标文件={IconFileUrl}。无法保存 {path}：{ex.Message}",
                     OlanExceptionAction.Error, ex);
             }
             finally
@@ -174,7 +174,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
         }
         catch (HttpRequestException ex)
         {
-            task.SetFailed( new OlanException("无法获取服务器信息", "连接服务器状态 API 失败", OlanExceptionAction.Error, ex));
+            task.SetFailed( new OlanException("无法获取服务器信息", $"请求 mcstatus 服务器状态；服务器图标文件={IconFileUrl}；请求URL={$"https://api.mcstatus.io/v2/status/java/{ReadableAddress}"}。连接服务器状态 API 失败", OlanExceptionAction.Error, ex));
             return;
         }
         #endregion
@@ -184,7 +184,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
             await using Stream body = await response.Content.ReadAsStreamAsync();
             if (!response.IsSuccessStatusCode)
             {
-                task.SetFailed(new OlanException("无法获取服务器信息", "服务器请求失败"));
+                task.SetFailed(new OlanException("无法获取服务器信息", $"检查 mcstatus HTTP 响应状态；服务器图标文件={IconFileUrl}；请求URL={$"https://api.mcstatus.io/v2/status/java/{ReadableAddress}"}；HTTP状态={(int)response.StatusCode}。服务器请求失败"));
                 return;
             }
 
@@ -203,7 +203,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
             }
             catch (Exception ex) when (ex is JsonException or InvalidOperationException)
             {
-                task.SetFailed(new OlanException("无法获取服务器信息", "服务器状态 API 返回了无效数据", OlanExceptionAction.Error, ex));
+                task.SetFailed(new OlanException("无法获取服务器信息", $"解析 mcstatus online/motd/players 字段；服务器图标文件={IconFileUrl}；请求URL={$"https://api.mcstatus.io/v2/status/java/{ReadableAddress}"}；HTTP状态={(int)response.StatusCode}。服务器状态 API 返回了无效数据", OlanExceptionAction.Error, ex));
                 return;
             }
 
@@ -211,7 +211,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
             {
                 task.SetFailed(new OlanException(
                     "服务器离线",
-                    $"无法连接到服务器 {ServerInfo.Ip}:{ServerInfo.Port}",
+                    $"读取 mcstatus 返回的 online 状态；服务器图标文件={IconFileUrl}；请求URL={$"https://api.mcstatus.io/v2/status/java/{ReadableAddress}"}；HTTP状态={(int)response.StatusCode}。无法连接到服务器 {ServerInfo.Ip}:{ServerInfo.Port}",
                     OlanExceptionAction.Warning));
             }
 
@@ -231,7 +231,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
     {
         const string prefix = "data:image/png;base64,";
         if (!iconDataUri.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            throw new OlanException("无法获取服务器图标", "服务器返回了不支持的图标格式",OlanExceptionAction.Warning);
+            throw new OlanException("无法获取服务器图标", $"解码服务器图标前检查 data URI 格式；服务器图标文件={IconFileUrl}。服务器返回了不支持的图标格式",OlanExceptionAction.Warning);
 
         byte[] iconBytes;
         try
@@ -242,7 +242,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
         {
             throw new OlanException(
                 "无法获取服务器图标",
-                "服务器返回了无效的 Base64 图标数据",
+                $"解码服务器图标 Base64 内容；服务器图标文件={IconFileUrl}。服务器返回了无效的 Base64 图标数据",
                 OlanExceptionAction.Error,
                 ex);
         }
@@ -250,7 +250,7 @@ public class ServerEntry(Guid id, string instanceId, ServerInfo serverInfo, stri
         if (iconBytes.Length > 4 * 1024 * 1024 ||
             !iconBytes.AsSpan().StartsWith(PngSignature))
         {
-            throw new OlanException("无法获取服务器图标", "服务器返回的 PNG 图标无效或文件过大");
+            throw new OlanException("无法获取服务器图标", $"校验服务器图标的 PNG 签名与大小；服务器图标文件={IconFileUrl}。服务器返回的 PNG 图标无效或文件过大");
         }
 
         string iconDirectory = Path.GetDirectoryName(IconFileUrl)!;

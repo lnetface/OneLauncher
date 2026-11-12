@@ -18,7 +18,7 @@ public class P2PMode : IConnectService
     public P2PMode(MCTPower mainPower)
     {
         if (Init.SystemType != SystemType.windows)
-            throw new OlanException("无法初始化联机模块","你的操作系统不受支持");
+            throw new OlanException("无法初始化联机模块",$"初始化联机模块前检查操作系统支持；操作系统={System.Runtime.InteropServices.RuntimeInformation.OSDescription}。你的操作系统不受支持");
         this.mainPower = mainPower;
     }
 

@@ -52,7 +52,7 @@ internal partial class DownloadMinecraft
                 new MojangSourceDownloadUrlGetter(),
                 new SkyCrystalSourceDownloadUrlGetter(info.ID)
             ],
-            _ => throw new OlanException("内部错误", "未知的下载策略")
+            _ => throw new OlanException("内部错误", $"为 Minecraft 下载选择下载源策略；下载策略={info.DownloadStrategy}；游戏根目录={info.GameRootPath}。未知的下载策略")
         };
     }
 

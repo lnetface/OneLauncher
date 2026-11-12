@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OneLauncher.Core.Global;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -55,6 +56,7 @@ public abstract class BasicDataManager<T> where T : class, new()
     // Read and validate the manager's own configuration document.
     protected async Task<T> ReadDataAsync()
     {
+        string diagnosticStep = "打开配置文件";
         try
         {
             await using var stream = File.OpenRead(ConfigPath);
@@ -66,18 +68,20 @@ public abstract class BasicDataManager<T> where T : class, new()
             }
             else
             {
+                diagnosticStep = "反序列化配置 JSON";
                 var deserialized = await JsonSerializer.DeserializeAsync(stream, _jsonTypeInfo);
                 if (deserialized == null && RequireValidDocument)
                     throw new JsonException("配置文件不能为 null。");
                 value = deserialized ?? new T();
             }
+            diagnosticStep = "校验反序列化后的配置字段";
             ValidateData(value);
             return value;
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
             throw new OlanException("加载配置文件失败",
-                $"{ConfigPath} 文件无法读取或已损坏。{Environment.NewLine}{ex.Message}",
+                $"读取或保存 JSON 配置文件；读写步骤={diagnosticStep}；配置文件={ConfigPath}。{ConfigPath} 文件无法读取或已损坏。{Environment.NewLine}{ex.Message}",
                 OlanExceptionAction.FatalError, ex);
         }
     }
@@ -99,20 +103,24 @@ public abstract class BasicDataManager<T> where T : class, new()
         ValidateData(data);
         await _saveLock.WaitAsync();
         string? temporaryPath = null;
+        string diagnosticStep = "创建配置临时文件";
         try
         {
             temporaryPath = ConfigPath + $".{Guid.NewGuid():N}.tmp";
             await using (var stream = new FileStream(temporaryPath, FileMode.CreateNew,
                 FileAccess.Write, FileShare.None, 4096, true))
             {
+                diagnosticStep = "序列化配置并写入临时文件";
                 await JsonSerializer.SerializeAsync(stream, data, _jsonTypeInfo);
+                diagnosticStep = "刷新配置临时文件内容";
                 await stream.FlushAsync();
             }
+            diagnosticStep = "用临时文件替换目标配置";
             File.Move(temporaryPath, ConfigPath, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
-            throw new OlanException("保存配置文件失败", $"无法保存 {ConfigPath}：{ex.Message}",
+            throw new OlanException("保存配置文件失败", $"读取或保存 JSON 配置文件；读写步骤={diagnosticStep}；文件/目录 temporaryPath={temporaryPath}；配置文件={ConfigPath}。无法保存 {ConfigPath}：{ex.Message}",
                 OlanExceptionAction.Error, ex);
         }
         finally
@@ -136,7 +144,10 @@ public abstract class BasicDataManager<T> where T : class, new()
         foreach (Action subscriber in OnDataChanged.GetInvocationList())
         {
             try { subscriber(); }
-            catch (Exception ex) { Trace.TraceError($"配置更改事件处理失败：{ex}"); }
+            catch (Exception ex)
+            {
+                Trace.TraceError($"配置更改事件处理失败：{ex}");
+            }
         }
     }
     protected abstract JsonTypeInfo<T> CreateJsonTypeInfo(JsonSerializerOptions options);

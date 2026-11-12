@@ -184,7 +184,15 @@ internal partial class DownloadPaneViewModel : BaseViewModel, IPaneHost
             cancellation.ThrowIfCancellationRequested();
             content.UserInfo.ForEach(async u =>
             {
-                await _gameDataManager.AddGameDataAsync(u);
+                try
+                {
+                    await _gameDataManager.AddGameDataAsync(u);
+                }
+                catch (Exception ex)
+                {
+                    if (ex is not OlanException)
+                        _ = new OlanException("保存下载实例失败", $"后台保存下载后的实例信息；实例ID={u.InstanceId}；实例目录={u.InstancePath}；索引文件={Init.GameRootPath}/instance/instance.json。原因：{ex.Message}", OlanExceptionAction.Warning, ex);
+                }
             });
             cancellation.ThrowIfCancellationRequested();
             await _gameDataManager.SetDefaultInstanceAsync(content.UserInfo.FirstOrDefault()!.InstanceId);

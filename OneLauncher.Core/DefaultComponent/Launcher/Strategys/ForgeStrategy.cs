@@ -48,13 +48,13 @@ internal class ForgeStrategy : IModArgStrategy
 #endif
         };
 
-        return ForgeLaunchArguments.Expand(_parser.info.Arguments?.Jvm)
+        return ForgeLaunchArguments.Expand(_parser.info.Arguments?.Jvm, Path.Combine(_basePath, "versions", _versionID, "version.forge.json") + ": arguments.jvm")
             .Select(arg => ForgeLaunchArguments.Encode(Tools.ReplacePlaceholders(arg, placeholders)));
     }
 
     // Game 参数通常是固定的，但以防万一也加上替换逻辑
     public IEnumerable<string> GetAdditionalGameArgs() => _parser.info.Arguments == null
-        ? ForgeLaunchArguments.LegacyGame(_parser.info.MinecraftArguments)
-        : ForgeLaunchArguments.Expand(_parser.info.Arguments.Game)
+        ? ForgeLaunchArguments.LegacyGame(_parser.info.MinecraftArguments, Path.Combine(_basePath, "versions", _versionID, "version.forge.json") + ": minecraftArguments")
+        : ForgeLaunchArguments.Expand(_parser.info.Arguments.Game, Path.Combine(_basePath, "versions", _versionID, "version.forge.json") + ": arguments.game")
             .Select(ForgeLaunchArguments.Encode);
 }

@@ -45,6 +45,8 @@ public static partial class Init
     internal static Download Download { get; private set; }
     public static async Task<IServiceCollection> Initialize(bool isCommandMode = false)
     {
+        string diagnosticStep = "创建启动器数据目录";
+        string diagnosticTarget = BasePath;
         try
         {
             Directory.CreateDirectory(BasePath);
@@ -53,14 +55,20 @@ public static partial class Init
             
             // 先把最重要的基本配置信息初始化了，然后初始化别的
             var configManger = new DBManager(Path.Combine(BasePath,"config.json"));
+            diagnosticStep = "读取并初始化启动器配置";
+            diagnosticTarget = Path.Combine(BasePath, "config.json");
             await configManger.InitializeAsync();
             services.AddSingleton<DBManager>(configManger);
             ConfigManager = configManger;
 
             // 持久化配置模型对旧版 null 或空安装路径的默认值补全。
+            diagnosticStep = "保存默认安装路径配置";
             await configManger.Save();
+            diagnosticStep = "解析游戏安装目录配置";
             InstalledPath = configManger.Data.OlanSettings.InstallPath;
             GameRootPath = Path.Combine(InstalledPath, "minecraft");
+            diagnosticStep = "创建游戏安装目录";
+            diagnosticTarget = InstalledPath;
             Directory.CreateDirectory(InstalledPath);
             // 初始化系统信息
             SystemType = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? SystemType.windows :
@@ -72,6 +80,7 @@ public static partial class Init
             OnApplicationClosingReleaseSourcesList.Add(downloadTool);
             Download = downloadTool;
 
+            diagnosticStep = "初始化核心组件";
             var unitedCore = await UnitedCore.Initialize();
             services.AddSingleton<UnitedCore>(unitedCore);
 
@@ -80,31 +89,31 @@ public static partial class Init
         #region
         catch (ArgumentException ex)
         {
-            throw new OlanException("参数错误", $"参数未被正常传递：{ex}", OlanExceptionAction.FatalError);
+            throw new OlanException("参数错误", $"初始化启动器时校验参数；当前阶段={diagnosticStep}；目标文件/目录={diagnosticTarget}。参数未被正常传递：{ex}", OlanExceptionAction.FatalError);
         }
         catch (PathTooLongException ex)
         {
-            throw new OlanException("路径过长", $"路径过长：{ex}", OlanExceptionAction.FatalError);
+            throw new OlanException("路径过长", $"初始化启动器时解析路径；当前阶段={diagnosticStep}；目标文件/目录={diagnosticTarget}。路径过长：{ex}", OlanExceptionAction.FatalError);
         }
         catch (NotSupportedException ex)
         {
-            throw new OlanException("不支持的操作", $"当前操作不被支持：{ex}", OlanExceptionAction.FatalError);
+            throw new OlanException("不支持的操作", $"初始化启动器时执行平台操作；当前阶段={diagnosticStep}；目标文件/目录={diagnosticTarget}。当前操作不被支持：{ex}", OlanExceptionAction.FatalError);
         }
         catch (UnauthorizedAccessException ex)
         {
-            throw new OlanException("权限不足", $"当前用户没有足够的权限：{ex}", OlanExceptionAction.FatalError);
+            throw new OlanException("权限不足", $"初始化启动器时访问目录或配置；当前阶段={diagnosticStep}；目标文件/目录={diagnosticTarget}。当前用户没有足够的权限：{ex}", OlanExceptionAction.FatalError);
         }
         catch (FileNotFoundException ex)
         {
-            throw new OlanException("文件未找到", $"所需文件不存在：{ex}", OlanExceptionAction.FatalError);
+            throw new OlanException("文件未找到", $"初始化启动器时读取所需文件；当前阶段={diagnosticStep}；目标文件/目录={diagnosticTarget}。所需文件不存在：{ex}", OlanExceptionAction.FatalError);
         }
         catch (DirectoryNotFoundException ex)
         {
-            throw new OlanException("目录未找到", $"所需目录不存在：{ex}", OlanExceptionAction.FatalError);
+            throw new OlanException("目录未找到", $"初始化启动器时访问所需目录；当前阶段={diagnosticStep}；目标文件/目录={diagnosticTarget}。所需目录不存在：{ex}", OlanExceptionAction.FatalError);
         }
         catch (InvalidOperationException ex)
         {
-            throw new OlanException("操作无效", $"当前操作无效：{ex}", OlanExceptionAction.FatalError);
+            throw new OlanException("操作无效", $"初始化启动器时建立核心组件；当前阶段={diagnosticStep}；目标文件/目录={diagnosticTarget}。当前操作无效：{ex}", OlanExceptionAction.FatalError);
         }
         #endregion
     }

@@ -39,7 +39,7 @@ internal partial class InitServerPaneViewModel : BaseViewModel, IPaneHost
     {
         if (!IsAgreeMinecraftEULA)
             await OlanExceptionWorker.ForOlanException(
-                new OlanException("无法初始化服务端","你必须在安装前同意Minecraft的最终用户许可协议",OlanExceptionAction.Error));
+                new OlanException("无法初始化服务端",$"安装服务端前检查 EULA 同意状态；版本标识={serverVersion}。你必须在安装前同意Minecraft的最终用户许可协议",OlanExceptionAction.Error));
         else
         {
             // 反正后面也要用，这里也读取了索性直接返回一个java版本

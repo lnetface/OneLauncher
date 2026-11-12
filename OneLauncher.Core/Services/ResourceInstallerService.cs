@@ -90,7 +90,7 @@ public sealed class ResourceInstallerService
         NdDowItem? mainMod = GetTask.GetDownloadInfos();
         if (!mainMod.HasValue)
             throw new OneLauncher.Core.Global.OlanException(
-                "安装模组失败", $"未找到项目 {modId} 适配 Minecraft {instance.VersionId} 和 {modType} 的模组版本。");
+                "安装模组失败", $"查询并筛选 Modrinth 模组兼容版本；参数 modId={modId}；参数 modType={modType}；文件/目录 modPath={modPath}；Minecraft={instance.VersionId}。未找到项目 {modId} 适配 Minecraft {instance.VersionId} 和 {modType} 的模组版本。");
 
         List<NdDowItem> allFiles = new List<NdDowItem> { (NdDowItem)mainMod };
 

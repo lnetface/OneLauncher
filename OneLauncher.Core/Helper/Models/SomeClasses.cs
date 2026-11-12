@@ -23,7 +23,7 @@ public struct ServerInfo
         string host = ip?.Trim() ?? string.Empty;
         if (host.Length == 0 || port < 0 || port > 65535)
         {
-            throw new OlanException("无法获取服务器信息", "服务器地址或端口无效");
+            throw new OlanException("无法获取服务器信息", $"构造服务器地址并校验主机和端口；参数 ip={ip}；参数 port={port}。服务器地址或端口无效");
         }
 
         Ip = host;

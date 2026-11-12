@@ -24,7 +24,7 @@ public static class ModpackExporter
 
         string instancePath = Path.GetFullPath(gameData.InstancePath);
         if (!Directory.Exists(instancePath))
-            throw new OlanException("导出失败", $"实例根目录不存在：{instancePath}", OlanExceptionAction.Error);
+            throw new OlanException("导出失败", $"读取实例元数据并写入导出的整合包；文件/目录 instancePath={instancePath}。实例根目录不存在：{instancePath}", OlanExceptionAction.Error);
 
         string outputPath = Path.Combine(instancePath, $"{GetSafeFileName(gameData.Name, gameData.InstanceId)}.mrpack");
         // Keep the temporary file beside the destination so the final move remains atomic
@@ -101,7 +101,7 @@ public static class ModpackExporter
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
             TryDeleteTemporaryFile(temporaryPath);
-            throw new OlanException("导出失败", $"无法创建整合包：{ex.Message}", OlanExceptionAction.Error, ex);
+            throw new OlanException("导出失败", $"读取实例元数据并写入导出的整合包；文件/目录 instancePath={instancePath}；文件/目录 outputPath={outputPath}；文件/目录 temporaryPath={temporaryPath}。无法创建整合包：{ex.Message}", OlanExceptionAction.Error, ex);
         }
         catch
         {
@@ -154,7 +154,7 @@ public static class ModpackExporter
         };
         string metadataPath = Path.Combine(Init.GameRootPath, "versions", gameData.VersionId, metadataName);
         if (!File.Exists(metadataPath))
-            throw new OlanException("导出失败", $"找不到加载器元数据：{metadataPath}", OlanExceptionAction.Error);
+            throw new OlanException("导出失败", $"读取实例元数据并写入导出的整合包；文件/目录 metadataPath={metadataPath}。找不到加载器元数据：{metadataPath}", OlanExceptionAction.Error);
 
         using JsonDocument metadata = JsonDocument.Parse(File.ReadAllText(metadataPath));
         if (metadata.RootElement.TryGetProperty("loader", out JsonElement loader) &&
@@ -168,7 +168,7 @@ public static class ModpackExporter
             !string.IsNullOrWhiteSpace(id.GetString()))
             return id.GetString()!;
 
-        throw new OlanException("导出失败", $"无法从加载器元数据中确定版本：{metadataPath}", OlanExceptionAction.Error);
+        throw new OlanException("导出失败", $"读取实例元数据并写入导出的整合包；文件/目录 metadataPath={metadataPath}。无法从加载器元数据中确定版本：{metadataPath}", OlanExceptionAction.Error);
     }
 
     private static string GetSafeFileName(string? name, string? instanceId)

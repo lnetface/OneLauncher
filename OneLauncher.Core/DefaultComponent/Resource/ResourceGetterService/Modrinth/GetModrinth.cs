@@ -28,7 +28,7 @@ public class GetModrinth
         Debug.WriteLine($"[OneLauncher.Core.DefaultComponent.Mod.ModService.Modrinth.GetModrinth.Init] 正在请求{Url}");
         using HttpResponseMessage response = await client.GetAsync(Url, cancellationToken);
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-            throw new OlanException("找不到模组","模组安装失败",OlanExceptionAction.Warning);
+            throw new OlanException("找不到模组",$"GET Modrinth 项目版本列表并解析模组元数据；请求URL Url={Url}。模组安装失败",OlanExceptionAction.Warning);
 
         try
         {

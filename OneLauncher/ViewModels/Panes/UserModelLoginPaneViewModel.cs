@@ -123,14 +123,14 @@ internal partial class UserModelLoginPaneViewModel : BaseViewModel, IPaneHost
                 um =
                     await _accountManager.LoginNewAccountToGetMinecraftMojangAccessTokenUseWindowsWebAccountManger(
                         (MainWindow.mainwindow.TryGetPlatformHandle().Handle))
-                    ?? throw new OlanException("认证失败", "无法认证你的微软账号");
+                    ?? throw new OlanException("认证失败", $"通过 WAM 或系统浏览器授权并读取认证结果；授权方式={(useWeb ? "系统浏览器" : "WAM/系统浏览器")}。无法认证你的微软账号");
             }
             else
 #endif
             {
                 um =
                     await _accountManager.LoginNewAccountToGetMinecraftMojangAccessTokenOnSystemBrowser()
-                    ?? throw new OlanException("认证失败", "无法认证你的微软账号");
+                    ?? throw new OlanException("认证失败", $"通过 WAM 或系统浏览器授权并读取认证结果；授权方式={(useWeb ? "系统浏览器" : "WAM/系统浏览器")}。无法认证你的微软账号");
             }
             await ac.AddUser(um);
             using (var task = new MojangProfile(um))

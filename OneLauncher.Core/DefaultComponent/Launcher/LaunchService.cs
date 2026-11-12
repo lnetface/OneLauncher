@@ -38,7 +38,7 @@ public sealed class LaunchService : IGameLauncher, IDisposable
             if (gameData is null)
                 throw new OlanException(
                     "启动失败",
-                    $"没有找到匹配的且已安装的实例{Environment.NewLine}请检查你的输入{instanceId}是否正确");
+                    $"定位待启动实例或检查游戏进程退出结果；任务名称={_task.Name}；实例索引文件={Path.Combine(Init.GameRootPath, "instance", "instance.json")}。没有找到匹配的且已安装的实例{Environment.NewLine}请检查你的输入{instanceId}是否正确");
 
             await Launch(gameData);
         }
@@ -159,7 +159,7 @@ public sealed class LaunchService : IGameLauncher, IDisposable
             {
                 _task.SetFailed(new OlanException(
                     _gameStarted == 0 ? "启动失败" : "游戏异常退出",
-                    $"游戏进程退出代码：{exitCode}"));
+                    $"定位待启动实例或检查游戏进程退出结果；任务名称={_task.Name}；实例索引文件={Path.Combine(Init.GameRootPath, "instance", "instance.json")}。游戏进程退出代码：{exitCode}"));
             }
         }
 
@@ -192,6 +192,8 @@ public sealed class LaunchService : IGameLauncher, IDisposable
         }
         catch (Exception ex)
         {
+            if (ex is not OlanException)
+                _ = new OlanException("停止游戏失败", $"取消启动任务后停止游戏进程；任务名称={_task.Name}。原因：{ex.Message}", OlanExceptionAction.Warning, ex);
             System.Diagnostics.Debug.WriteLine($"取消启动任务时停止游戏失败：{ex}");
         }
     }

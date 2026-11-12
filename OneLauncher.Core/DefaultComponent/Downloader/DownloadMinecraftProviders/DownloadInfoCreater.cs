@@ -38,7 +38,7 @@ public partial class DownloadInfo
         // 在读取/下载版本元数据之前拒绝混用其他根目录的索引。
         UnitedCore.Core.VersionListManager.EnsureGameRoot(gameRootPath);
         if (!VersionListManager.IsValidVersionId(versionId))
-            throw new OlanException("版本安装失败", "版本 ID 必须是有效的单级目录名。");
+            throw new OlanException("版本安装失败", $"校验版本安装目录并查找版本下载元数据；参数 versionId={versionId}；参数 modType={modType}；文件/目录 gameRootPath={gameRootPath}。版本 ID 必须是有效的单级目录名。");
         var download = Init.Download;
         #region 查找一些资源
         // 创建默认实例
@@ -64,7 +64,7 @@ public partial class DownloadInfo
         VersionBasicInfo versionDownloadInfo =
             versionBasic ??
             UnitedCore.Core.MojangVersionList.FirstOrDefault(x => x.ID == versionId)
-            ?? throw new OlanException("内部错误", "无法搜索到你需要下载版本的下载信息");
+            ?? throw new OlanException("内部错误", $"校验版本安装目录并查找版本下载元数据；参数 versionId={versionId}；参数 modType={modType}；文件/目录 gameRootPath={gameRootPath}。无法搜索到你需要下载版本的下载信息");
 
         // 确定版本信息
         UserVersion userVersion = new()

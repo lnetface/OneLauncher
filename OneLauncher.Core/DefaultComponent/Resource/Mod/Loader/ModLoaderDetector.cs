@@ -6,7 +6,7 @@ namespace OneLauncher.Core.DefaultComponent.Resource.Mod.Loader;
 /// <summary>结合加载器自身构件与参数识别身份。普通 Forge 共用库不能证明加载器是 Forge。</summary>
 public static class ModLoaderDetector
 {
-    public static ModEnum Detect(string? mainClass, IEnumerable<string>? libraries = null, IEnumerable<string>? gameArguments = null)
+    public static ModEnum Detect(string? mainClass, IEnumerable<string>? libraries = null, IEnumerable<string>? gameArguments = null, string diagnosticSource = "直接输入主类/库坐标/参数（未执行文件读取）")
     {
         var names = (libraries ?? []).Select(n => n.Split('@')[0].Split(':'))
             .Where(p => p.Length >= 2).Select(p => p[0] + ":" + p[1]).ToHashSet(StringComparer.Ordinal);
@@ -29,14 +29,14 @@ public static class ModLoaderDetector
         else if (forge) detected.Add(ModEnum.forge);
         if (fabric) detected.Add(ModEnum.fabric);
         if (quilt) detected.Add(ModEnum.quilt);
-        if (detected.Count > 1) throw new OlanException("加载器识别冲突", "版本清单中包含多个加载器身份，请检查继承链和依赖。");
+        if (detected.Count > 1) throw new OlanException("加载器识别冲突", $"由主类、库坐标和参数检测加载器身份冲突；来源文件={diagnosticSource}；启动主类={mainClass}。版本清单中包含多个加载器身份，请检查继承链和依赖。");
         if (detected.Count == 1) return detected[0];
         if (mainClass is "cpw.mods.bootstraplauncher.BootstrapLauncher" or "cpw.mods.modlauncher.Launcher")
-            throw new OlanException("无法识别加载器", "共享启动主类不能区分 Forge/NeoForge，需要版本清单中的加载器库或 fml 参数。");
+            throw new OlanException("无法识别加载器", $"区分共用启动主类的 Forge/NeoForge 身份；来源文件={diagnosticSource}；启动主类={mainClass}。共享启动主类不能区分 Forge/NeoForge，需要版本清单中的加载器库或 fml 参数。");
         if (args.Contains("--tweakClass") && !Pair("--tweakClass", "net.minecraft.launchwrapper.VanillaTweaker"))
-            throw new OlanException("无法识别加载器", "包含未支持的 tweakClass，无法将该版本识别为原版。");
+            throw new OlanException("无法识别加载器", $"识别游戏参数中的 tweakClass；来源文件={diagnosticSource}；启动主类={mainClass}。包含未支持的 tweakClass，无法将该版本识别为原版。");
         if (mainClass is null or "" or "net.minecraft.client.main.Main" or "net.minecraft.launchwrapper.Launch" or "net.minecraft.client.Minecraft")
             return ModEnum.none;
-        throw new OlanException("无法识别加载器", $"未识别的启动主类：{mainClass}");
+        throw new OlanException("无法识别加载器", $"检查是否支持版本配置的启动主类；来源文件={diagnosticSource}；启动主类={mainClass}。未识别的启动主类：{mainClass}");
     }
 }

@@ -16,6 +16,7 @@ public class SpecifiedFabricVersionConfig
 {
     private JsonArray? node;
     private string? loaderVersion;
+    private string? _diagnosticUrl;
     /// <summary>
     /// UI界面使用这个来获取可用版本列表
     /// （必须调用）
@@ -23,9 +24,10 @@ public class SpecifiedFabricVersionConfig
     /// <param name="version">游戏版本</param>
     public async Task<List<string>> GetVersions(string version)
     {
+        _diagnosticUrl = $"https://meta.fabricmc.net/v2/versions/loader/{version}";
         using Stream rep = await Init.Download.UnityClient
             .GetStreamAsync($"https://meta.fabricmc.net/v2/versions/loader/{version}");
-        node = (await JsonNode.ParseAsync(rep))?.Root?.AsArray() ?? throw new OlanException("内部错误", "无法解析Fabric文本");
+        node = (await JsonNode.ParseAsync(rep))?.Root?.AsArray() ?? throw new OlanException("内部错误", $"读取 Fabric loader 列表并选择指定版本；请求URL={_diagnosticUrl}；请求loader版本={loaderVersion}。无法解析Fabric文本");
         List<string> versions = new List<string>();
         for(int i = 0; i < node.Count; i++)
         {
@@ -48,7 +50,7 @@ public class SpecifiedFabricVersionConfig
     public async Task<JsonNode> GetDownloadFiles()
     {
         if (node == null || loaderVersion == null)
-            throw new OlanException("内部错误", "内部数值未初始化");
+            throw new OlanException("内部错误", $"读取 Fabric loader 列表并选择指定版本；请求URL={_diagnosticUrl}；请求loader版本={loaderVersion}。内部数值未初始化");
         for (int i = 0; i < node.Count; i++)
         {
             string p = node[i]!["loader"]!["version"]!.GetValue<string>();
@@ -57,6 +59,6 @@ public class SpecifiedFabricVersionConfig
                 return node[i]!;
             }
         }
-        throw new OlanException("内部错误", "未找到指定的Fabric版本");
+        throw new OlanException("内部错误", $"读取 Fabric loader 列表并选择指定版本；请求URL={_diagnosticUrl}；请求loader版本={loaderVersion}。未找到指定的Fabric版本");
     }
 }

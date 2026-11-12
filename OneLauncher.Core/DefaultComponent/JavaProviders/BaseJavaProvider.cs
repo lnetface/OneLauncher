@@ -25,18 +25,18 @@ internal abstract class BaseJavaProvider
     {
         if(minimumVersionSupport != null)
         if(javaVersion < minimumVersionSupport)
-            throw new OlanException("不支持的Java版本", $"当前Java版本{javaVersion}不受支持，最低支持版本为{minimumVersionSupport}。");
+            throw new OlanException("不支持的Java版本", $"为 Java 安装检查平台或获取下载地址；参数 javaVersion={javaVersion}。当前Java版本{javaVersion}不受支持，最低支持版本为{minimumVersionSupport}。");
         systemTypeName = 
             RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" :
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
             RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "macos" :
-            throw new OlanException("不支持的操作系统", "当前操作系统不受支持，请使用Windows、Linux或macOS。");
+            throw new OlanException("不支持的操作系统", $"为 Java 安装检查平台或获取下载地址；参数 javaVersion={javaVersion}。当前操作系统不受支持，请使用Windows、Linux或macOS。");
         //systemTypeName = "macos";
         systemArchName = RuntimeInformation.OSArchitecture switch
         {
             Architecture.X64 => "x64",
             Architecture.Arm64 => "aarch64",
-            _ => throw new OlanException("不支持的架构", "当前操作系统架构不受支持，请使用x64或aarch64架构的操作系统。")
+            _ => throw new OlanException("不支持的架构", $"为 Java 安装检查平台或获取下载地址；参数 javaVersion={javaVersion}。当前操作系统架构不受支持，请使用x64或aarch64架构的操作系统。")
         };
 
         this.javaVersion = javaVersion.ToString();
@@ -53,11 +53,11 @@ internal abstract class BaseJavaProvider
             return Path.Combine(Directory.GetDirectories(installTo)[0], "Contents", "Home", "bin", "java");
         else return Path.Combine(Directory.GetDirectories(installTo)[0], "bin", "java");
     }
-    protected async Task GetAndDownloadAsync(Func<Task<string?>> GetDownloadUrlFuntion, IProgress<(long Start, long End)> op)
+    protected async Task GetAndDownloadAsync(Func<Task<string?>> GetDownloadUrlFuntion, IProgress<(long Start, long End)> op, string? diagnosticUrl = null)
     {
         string? downloadUrl = await GetDownloadUrlFuntion();
         if (downloadUrl == null)
-            throw new OlanException("无法获取Java下载链接", "从Java提供商API获取Java下载链接时出错，可能是API不可用或参数错误。");
+            throw new OlanException("无法获取Java下载链接", $"为 Java 安装检查平台或获取下载地址；请求URL downloadUrl={downloadUrl}；提供商={ProviderName}；请求URL={diagnosticUrl}；Java安装目录={installTo}。从Java提供商API获取Java下载链接时出错，可能是API不可用或参数错误。");
         string tempFilePath = Path.Combine(installTo, $"{javaVersion}.tmp");
         CancellationToken cancellationToken = CancelToken ?? CancellationToken.None;
         const int maxArchiveAttempts = 3;

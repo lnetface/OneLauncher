@@ -8,13 +8,13 @@ internal static class ForgePaths
     public static string RelativeMaven(string coordinate)
     {
         if (string.IsNullOrWhiteSpace(coordinate))
-            throw new OlanException("Forge 配置无效", "Maven 坐标不能为空。");
+            throw new OlanException("Forge 配置无效", $"将 Maven 构件坐标转换为相对文件路径；参数 coordinate={coordinate}。Maven 坐标不能为空。");
         var value = coordinate.StartsWith('[') && coordinate.EndsWith(']') ? coordinate[1..^1] : coordinate;
         var parts = value.Split('@')[0].Split(':');
         if (parts.Length is < 3 or > 4 || value.Count(c => c == '@') > 1 || value.EndsWith('@') ||
             value.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_' or '+' or ':' or '@')) ||
             parts.Any(p => p.Length == 0 || p is "." or ".."))
-            throw new OlanException("Forge 配置无效", $"无效的 Maven 坐标：{coordinate}");
+            throw new OlanException("Forge 配置无效", $"校验 Maven 构件坐标的组成部分；参数 coordinate={coordinate}。无效的 Maven 坐标：{coordinate}");
         return Path.GetRelativePath(Path.GetFullPath("."), Tools.MavenToPath(Path.GetFullPath("."), value));
     }
 
@@ -22,11 +22,11 @@ internal static class ForgePaths
     {
         if (string.IsNullOrWhiteSpace(relative) || Path.IsPathRooted(relative) || relative.Contains(':') ||
             relative.Replace('\\', '/').Split('/').Any(p => p is ".." or "."))
-            throw new OlanException("Forge 路径无效", $"文件引用超出允许目录：{relative}");
+            throw new OlanException("Forge 路径无效", $"检查归档或库文件引用的相对路径；文件/目录 relative={relative}。文件引用超出允许目录：{relative}");
         var prefix = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         var result = Path.GetFullPath(Path.Combine(prefix, relative.Replace('/', Path.DirectorySeparatorChar)));
         if (!result.StartsWith(prefix, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
-            throw new OlanException("Forge 路径无效", $"文件引用超出允许目录：{relative}");
+            throw new OlanException("Forge 路径无效", $"规范化库文件路径并检查允许目录边界；文件/目录 relative={relative}。文件引用超出允许目录：{relative}");
         return result;
     }
 

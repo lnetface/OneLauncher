@@ -8,6 +8,7 @@ internal enum ForgeInstallProtocol { Legacy, Profile }
 internal sealed class ForgePreparedInstall
 {
     public required byte[] Installer { get; init; }
+    public string DiagnosticSource { get; init; } = "内存安装包（未提供来源URL）";
     public required string VersionJson { get; init; }
     public required ForgeSeriesVersionJson Version { get; init; }
     public required ForgeSeriesInstallProfile Profile { get; init; }
