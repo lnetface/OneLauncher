@@ -24,6 +24,13 @@
 | `Resources.ConnectCore` | `Resources.ConnectCore` | 直接覆盖 |
 | `Resources.SkinBodyRender` | `Resources.SkinGetterWithUUID` | 配置的约定是“地址后直接拼接 UUID”，因此只接受以 `${UUID}` 结尾的模板，去掉占位符后作为前缀；其他形式的模板被丢弃 |
 | `Function.AllowOfflineLogin` / `AllowYggdrasilLogin` | `AllowNonMicrosoftLogin` | 任一为 `false` 时设为 `false`；否则任一为 `true` 时设为 `true`；都为 null 时忽略 |
+| `RecommendedMods` | `RecommandedMods` | 去除空白项与重复项后覆盖 |
+| `JavaVersions` | `AvailableJavaVersions` | 只保留正整数并去重，保持清单中的顺序 |
+
+### 推荐模组与 Java 版本（2026-11-13 补充）
+
+- `RecommendedMods` 是 Modrinth 项目 ID 列表，内容与原内置列表相同。JSON 不支持注释，ID 与模组名称的对应关系请查阅 `DBManager.JsonModels.cs` 中内置列表的注释，或 `推荐模组字符串清单-20261112.md`。`RecommendedModInstaller` 在每次安装时读取配置，因此下次安装就会使用新列表。
+- `DefaultConfig.AvailableJavaVersions` 是新增配置项，默认值 `[8, 11, 16, 17, 21, 24, 25]` 原先写死在 `JavaInstallPaneViewModel` 中。面板改为在创建时从配置读取；如果默认选中的 21 不在列表里，就改选第一项。各 Java 提供商的最低版本筛选（`MinimumVersion`）不变。如果清单给出的版本某个提供商不支持，会在安装时由该提供商报错。
 
 任何异常（网络、解析、保存）都只记录为 `OlanExceptionAction.Warning`，现有配置保持不变，与 `CheckUpdate` 的处理方式一致。
 

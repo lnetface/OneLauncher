@@ -38,6 +38,9 @@ internal partial class JavaInstallPaneViewModel : BaseViewModel, IPaneHost
         _javaManager = javaManager;
         _unitedCore = unitedCore;
         OnPaneClose = onCloseCallback ?? (() => { });
+        // 列表由配置/资源清单决定，默认的 21 不在列表中时改选第一项
+        if (!JavaVersions.Contains(SelectedJavaVersion) && JavaVersions.Count > 0)
+            SelectedJavaVersion = JavaVersions[0];
         RefreshProviderOptions();
         RefreshInstalledState();
     }
@@ -47,7 +50,7 @@ internal partial class JavaInstallPaneViewModel : BaseViewModel, IPaneHost
     [NotifyCanExecuteChangedFor(nameof(InstallCommand))]
     [NotifyCanExecuteChangedFor(nameof(OverwriteCommand))]
     private JavaProviderItem? _selectedJavaProvider;
-    [ObservableProperty] private ObservableCollection<int> _javaVersions = new([8, 11, 16, 17, 21, 24, 25]);
+    [ObservableProperty] private ObservableCollection<int> _javaVersions = new(Init.ConfigManger.Data.DefaultSettings.AvailableJavaVersions);
     [ObservableProperty] private int _selectedJavaVersion = 21;
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(InstallCommand))]

@@ -32,12 +32,12 @@ public class AutoUpdate
             // 3. 写入配置：存在值则覆盖，null、缺失或空列表则忽略
             var settings = Init.ConfigManager.Data.DefaultSettings;
             var resources = manifest.Resources;
-            if (CleanUrls(resources?.WindowsUpdater) is { } updater)
+            if (CleanList(resources?.WindowsUpdater) is { } updater)
                 settings.Resources.Updater = updater;
-            if (CleanUrls(resources?.ConnectCore) is { } connectCore)
+            if (CleanList(resources?.ConnectCore) is { } connectCore)
                 settings.Resources.ConnectCore = connectCore;
             // 配置中皮肤地址为直接拼接 UUID 的前缀，只接受以 ${UUID} 结尾的模板
-            if (CleanUrls(resources?.SkinBodyRender?
+            if (CleanList(resources?.SkinBodyRender?
                     .Where(url => url.EndsWith(UuidPlaceholder, StringComparison.Ordinal))
                     .Select(url => url[..^UuidPlaceholder.Length])) is { } skin)
                 settings.Resources.SkinGetterWithUUID = skin;
@@ -49,6 +49,13 @@ public class AutoUpdate
             else if (function?.AllowOfflineLogin == true || function?.AllowYggdrasilLogin == true)
                 settings.AllowNonMicrosoftLogin = true;
 
+            if (CleanList(manifest.RecommendedMods) is { } recommendedMods)
+                settings.RecommandedMods = recommendedMods;
+            // 只保留正整数版本号并去重
+            var javaVersions = manifest.JavaVersions?.Where(version => version > 0).Distinct().ToList();
+            if (javaVersions is { Count: > 0 })
+                settings.AvailableJavaVersions = javaVersions;
+
             await Init.ConfigManager.Save();
         }
         catch (Exception ex)
@@ -59,12 +66,13 @@ public class AutoUpdate
         }
     }
     const string UuidPlaceholder = "${UUID}";
-    // 去除空白项；结果为空时返回 null 表示忽略
-    private static List<string>? CleanUrls(IEnumerable<string?>? urls)
+    // 去除空白项与重复项；结果为空时返回 null 表示忽略
+    private static List<string>? CleanList(IEnumerable<string?>? items)
     {
-        var result = urls?
-            .Where(url => !string.IsNullOrWhiteSpace(url))
-            .Select(url => url!.Trim())
+        var result = items?
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item!.Trim())
+            .Distinct()
             .ToList();
         return result is { Count: > 0 } ? result : null;
     }

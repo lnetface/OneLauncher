@@ -17,6 +17,10 @@ internal class ResourceManifest
     public JsonElement? Announcement { get; set; }
     public ManifestResources? Resources { get; set; }
     public ManifestFunction? Function { get; set; }
+    // 推荐模组的 Modrinth 项目 ID
+    public List<string>? RecommendedMods { get; set; }
+    // Java 安装面板中可选择下载的 Java 版本
+    public List<int>? JavaVersions { get; set; }
 }
 
 // 每项为按顺序尝试的候选地址；null 或空列表表示忽略

@@ -37,6 +37,8 @@ public class DefaultConfig
     public ResourceCollection Resources { get; set; } = new();
     // 是否允许离线、外置等非微软账户登入
     public bool AllowNonMicrosoftLogin { get; set; } = true;
+    // Java 安装面板中可选择下载的 Java 版本
+    public List<int> AvailableJavaVersions { get; set; } = [8, 11, 16, 17, 21, 24, 25];
     #region 推荐模组
     [JsonConverter(typeof(RecommendedModListConverter))]
     public List<string> RecommandedMods { get; set; } =
