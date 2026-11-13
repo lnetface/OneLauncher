@@ -43,7 +43,7 @@ internal partial class AccountPageViewModel : BaseViewModel, IPageHost, IListTem
     private MsalAuthenticator _msalAuthenticator => _unitedCore.MsalAuthenticator;
     private readonly UnitedCore _unitedCore;
     private readonly DBManager _dbManager;
-    public bool ShowIdentifiers => _dbManager.Data.OlanSettings.ShowIdentifiers;
+    public bool ShowIdentifiers => _dbManager.Data.OlanSettings.OlanUISettings.ShowIdentifiers;
     private UserModelLoginPaneViewModelFactory _userModelLoginPaneFactory;
     // 刷新
     public Task RefList()
@@ -79,9 +79,11 @@ internal partial class AccountPageViewModel : BaseViewModel, IPageHost, IListTem
         {
             foreach (var user in Items)
             {
-                if(user.um.UserType == AccountType.Msa)
-                    using (var task = new MojangProfile(user.um))
-                        await task.GetSkinHeadImage();
+                if (user.um.UserType == AccountType.Msa) {
+                await user.um.IntelligentLogin(_msalAuthenticator);
+                using (var task = new MojangProfile(user.um))
+                    await task.GetSkinHeadImage();
+            }
             }
             await RefList();
             WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("刷新完毕", Avalonia.Controls.Notifications.NotificationType.Success));

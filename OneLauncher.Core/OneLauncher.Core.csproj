@@ -12,4 +12,7 @@
 	  <PackageReference Include="Microsoft.Identity.Client" Version="4.86.1" />
 	  <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.86.1" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Global\ModelDataMangers\JsonModel\" />
+	</ItemGroup>
 </Project>

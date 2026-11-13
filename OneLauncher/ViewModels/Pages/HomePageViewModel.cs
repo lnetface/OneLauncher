@@ -28,6 +28,7 @@ using OneLauncher.Interfaces;
 using OneLauncher.ViewModel.PaneViewModels.Factories;
 using OneLauncher.Core.DefaultComponent.Resource.Pack;
 using OneLauncher.Core.DefaultComponent.Server;
+using OneLauncher.Core.Global.Updater;
 
 namespace OneLauncher.Views.ViewModels;
 
@@ -205,11 +206,11 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
     {
         var settings = _configManager.Data.OlanSettings;
         RefreshLaunchItems();
-        IsMagicButtonStyle = settings.HomePageStyle == HomePageStyle.MagicButton;
-        IsNewsEnabled = settings.IsHomeNewsVisible;
-        IsTaskCenterEnabled = settings.IsHomeTaskCenterVisible;
-        IsPowerPlayEnabled = settings.IsHomePowerPlayVisible;
-        IsImportEnabled = settings.IsHomeImportVisible;
+        IsMagicButtonStyle = settings.OlanUISettings.HomePageStyle == HomePageStyle.MagicButton;
+        IsNewsEnabled = settings.OlanUISettings.IsHomeNewsVisible;
+        IsTaskCenterEnabled = settings.OlanUISettings.IsHomeTaskCenterVisible;
+        IsPowerPlayEnabled = settings.OlanUISettings.IsHomePowerPlayVisible;
+        IsImportEnabled = settings.OlanUISettings.IsHomeImportVisible;
         RefreshHomeBackground();
     }
 
@@ -423,6 +424,7 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
                 var token = task.Token!.Token;
                 task.SetProgress("正在分析PCL2实例", 0);
                 OpenTaskCenter();
+                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("开始导入 PCL2 版本。", openTaskCenterAfterClick: true));
                 var progress = new Progress<(DownProgress Title, int AllFiles, int DownedFiles, string DowingFileName)>(p =>
                 {
                     // 下载器也会报告 Done；只有整个导入返回后才能标记完成。
@@ -448,15 +450,18 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
                 token.ThrowIfCancellationRequested();
                 task.SetProgress("导入完成", 100);
                 task.SetDone();
+                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("PCL2 版本导入完成！", NotificationType.Success, openTaskCenterAfterClick: true));
             }
         }
         catch (OperationCanceledException) when (task?.Token?.IsCancellationRequested == true)
         {
             task.Cancel();
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("PCL2 版本导入已取消。", NotificationType.Warning, openTaskCenterAfterClick: true));
         }
         catch (Exception ex) when (task != null)
         {
             task.SetFailed(ex);
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage($"PCL2 版本导入失败：{ex.Message}", NotificationType.Error, openTaskCenterAfterClick: true));
         }
         catch (OlanException ex)
         {
@@ -544,7 +549,7 @@ internal partial class HomePageViewModel : BaseViewModel, IPageHost, IListTempla
                         Debug.WriteLine($"导入进度：{p.a}, 总文件数：{p.b}, 已下载文件数：{p.c}, 当前文件：{p.d}");
                     })
                     , task!.Token!.Token);
-                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("导入完成！"));
+                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("导入完成！", NotificationType.Success, openTaskCenterAfterClick: true));
                 task.SetDone();
             }
         }

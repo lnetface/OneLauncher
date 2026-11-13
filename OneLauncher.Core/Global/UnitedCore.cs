@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using OneLauncher.Core.Helper.Models;
 using OneLauncher.Core.Minecraft;
 using OneLauncher.Core.Services;
+using OneLauncher.Core.Global.Updater;
 
 namespace OneLauncher.Core.Global;
 public class UnitedCore
@@ -67,6 +68,7 @@ public class UnitedCore
     public static async Task<UnitedCore> Initialize()
     {
         _ = Logging.Value;
+        _ = AutoUpdate.CheckManifestUpdate();
         var versionListManager = new VersionListManager(Init.GameRootPath);
         await versionListManager.InitializeAsync();
 

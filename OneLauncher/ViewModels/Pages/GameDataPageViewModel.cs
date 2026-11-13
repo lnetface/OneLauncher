@@ -131,7 +131,7 @@ internal partial class GameDataTagItem : BaseViewModel
 internal partial class GameDataPageViewModel : BaseViewModel,IPageHost,IListTemplate<GameDataItem>
 {
     private readonly DBManager _dbManager;
-    public bool ShowIdentifiers => _dbManager.Data.OlanSettings.ShowIdentifiers;
+    public bool ShowIdentifiers => _dbManager.Data.OlanSettings.OlanUISettings.ShowIdentifiers;
     private readonly GameDataManager _gameDataManager;
     private readonly UnitedCore _unitedCore;
     private readonly EditGameDataPaneViewModelFactory _editVMFactory;

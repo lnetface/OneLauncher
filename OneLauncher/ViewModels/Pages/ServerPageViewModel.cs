@@ -89,7 +89,7 @@ internal partial class ServerPageViewModel : BaseViewModel,IPageHost,IListTempla
 {
     private readonly UnitedCore _unitedCore;
     private readonly DBManager _dbManager;
-    public bool ShowIdentifiers => _dbManager.Data.OlanSettings.ShowIdentifiers;
+    public bool ShowIdentifiers => _dbManager.Data.OlanSettings.OlanUISettings.ShowIdentifiers;
     private GameDataManager _gameDataManager => _unitedCore.GameDataManager;
     private readonly AddServerPaneViewModelFactory _addServerPaneViewModelFactory;
     private readonly EditServerPaneViewModelFactory _editServerPaneViewModelFactory;
@@ -199,12 +199,15 @@ internal partial class ServerPageViewModel : BaseViewModel,IPageHost,IListTempla
     private void AddServer()
     {
         IsPaneShow = true;
-        PaneContent = new AddServerPane
-        {
-            DataContext = _addServerPaneViewModelFactory.Create(
-                () => IsPaneShow = false,
-                serverId => RefreshPing(serverId))
-        };
+        var pane = new AddServerPane();
+        pane.DataContext = _addServerPaneViewModelFactory.Create(
+            () =>
+            {
+                // 查询通知可能已经打开任务中心，旧侧栏只关闭自身。
+                if (ReferenceEquals(PaneContent, pane)) IsPaneShow = false;
+            },
+            serverId => RefreshPing(serverId));
+        PaneContent = pane;
     }
 
     [RelayCommand]

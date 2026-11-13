@@ -105,12 +105,13 @@ internal partial class AddServerPaneViewModel : BaseViewModel, IPaneHost
             // 收藏已经保存，游戏列表同步失败时报告错误并保留收藏。
             await OlanExceptionWorker.ForOlanException(ex);
         }
+        WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("正在获取服务器信息……", openTaskCenterAfterClick: true));
         await serverEntry.GetAASServerInfo();
         _onServerInfoUpdated?.Invoke(serverEntry.Id);
         WeakReferenceMessenger.Default.Send(
             new MainWindowShowFlyoutMessage(
                 $"已添加服务器收藏：{serverEntry.Name}",
-                NotificationType.Success));
+                NotificationType.Success, openTaskCenterAfterClick: true));
         Cancel();
     }
 

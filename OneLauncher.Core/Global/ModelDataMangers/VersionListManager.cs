@@ -1,21 +1,8 @@
-using OneLauncher.Core.Global;
 using OneLauncher.Core.Helper.Models;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
 namespace OneLauncher.Core.Global.ModelDataMangers;
-
-public sealed class VersionListData
-{
-    [JsonRequired]
-    public List<UserVersion> VersionList { get; set; } = new();
-}
-
-[JsonSerializable(typeof(VersionListData))]
-[JsonSerializable(typeof(UserVersion))]
-[JsonSerializable(typeof(ModType))]
-public partial class VersionListJsonContext : JsonSerializerContext { }
 
 /// <summary>当前 Minecraft 根目录的已安装版本索引，由 UnitedCore 创建并持有。</summary>
 public sealed class VersionListManager : BasicDataManager<VersionListData>

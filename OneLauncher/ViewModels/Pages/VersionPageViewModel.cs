@@ -45,7 +45,36 @@ internal partial class VersionItem : BaseViewModel
     public async Task LaunchGame()
     {
         using var launchService = _unitedCore.GameLaunchService.CreateLaunchService($"启动 MC {versionExp.VersionID}");
-        await launchService.Play(versionExp, useRootMode: true);
+        void OnStarted() => WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(
+            $"MC {versionExp.VersionID} 已启动！", NotificationType.Success, openTaskCenterAfterClick: true));
+        void OnClosed(int code) => WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(
+            code == 0 ? $"MC {versionExp.VersionID} 已关闭。" : $"MC {versionExp.VersionID} 异常退出，代码：{code}。",
+            code == 0 ? NotificationType.Information : NotificationType.Error, openTaskCenterAfterClick: true));
+        launchService.GameStartedEvent += OnStarted;
+        launchService.GameClosedEvent += OnClosed;
+        try
+        {
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(
+                $"正在启动 MC {versionExp.VersionID}……", openTaskCenterAfterClick: true));
+            await launchService.Play(versionExp, useRootMode: true);
+        }
+        catch (OperationCanceledException)
+        {
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(
+                $"MC {versionExp.VersionID} 启动已取消。", NotificationType.Warning, openTaskCenterAfterClick: true));
+            throw;
+        }
+        catch (Exception ex)
+        {
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(
+                $"MC {versionExp.VersionID} 启动失败：{ex.Message}", NotificationType.Error, openTaskCenterAfterClick: true));
+            throw;
+        }
+        finally
+        {
+            launchService.GameStartedEvent -= OnStarted;
+            launchService.GameClosedEvent -= OnClosed;
+        }
     }
     [RelayCommand]
     public void ReadMoreInformations()

@@ -157,32 +157,21 @@ public class MojangProfile : IDisposable
         var outputPath = Path.Combine(Init.BasePath, "playerdata", "body");
         Directory.CreateDirectory(outputPath);
 
-        // 1. 获取皮肤
-        string sessionUrl = $"https://crafatar-pub.neodium.fr/renders/body/{uuid}";//$"https://crafatar.com/renders/body/{uuid}";
+        // 1. 获取皮肤：地址后拼接 UUID，按顺序尝试
+        var sessionUrls = Init.ConfigManager.Data.DefaultSettings.Resources.SkinGetterWithUUID
+            .Select(url => $"{url}{uuid}")
+            .ToList();
 
         // 2. 调用第三方API下载完整的皮肤图片
         try
         {
-            await Init.Download.DownloadFile(sessionUrl, Path.Combine(outputPath, $"{uuid}.png"));
-            //Byte[] skinImage;
-            //var responseMessage = await httpClient.GetAsync(sessionUrl);
-            //if ((int)responseMessage.StatusCode != 521)
-            //{
-            //    skinImage = await responseMessage.Content.ReadAsByteArrayAsync();
-            //    await File.WriteAllBytesAsync(Path.Combine(outputPath, $"{uuid}.png"), skinImage);
-            //}
-            //else
-            //{
-            //    sessionUrl = $"{Init.ConfigManager.Data.DefaultSettings.CrafatarUrl}{uuid}";
-            //    skinImage = await httpClient.GetByteArrayAsync(sessionUrl);
-            //    await File.WriteAllBytesAsync(Path.Combine(outputPath, $"{uuid}.png"), skinImage);
-            //}
+            await Init.Download.DownloadFile(sessionUrls, Path.Combine(outputPath, $"{uuid}.png"));
         }
         catch (HttpRequestException ex)
         {
             throw new OlanException(
                 "网络异常",
-                $"请求皮肤服务或下载并保存头像；文件/目录 outputPath={outputPath}；请求URL sessionUrl={sessionUrl}。无法从服务器下载皮肤图片{Environment.NewLine}点击 忽略 按钮忽略这个错误并使用史蒂夫皮肤图片",
+                $"请求皮肤服务或下载并保存头像；文件/目录 outputPath={outputPath}；候选URL={string.Join(", ", sessionUrls)}。无法从服务器下载皮肤图片{Environment.NewLine}点击 忽略 按钮忽略这个错误并使用史蒂夫皮肤图片",
                 OlanExceptionAction.Error,
                 ex);
         }

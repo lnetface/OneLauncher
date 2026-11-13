@@ -97,7 +97,7 @@ internal static class MagicHomeUiChecks
             Name(homeType.GetProperty("SelectedLaunchItem")!.GetValue(home)) == server.Name,
             "Settings default launch item must drive the home page");
         settingsType.GetProperty("SelectedHomePageStyle")!.SetValue(settingsVm, "魔法按钮");
-        await WaitUntil(() => config.Data.OlanSettings.HomePageStyle == HomePageStyle.MagicButton);
+        await WaitUntil(() => config.Data.OlanSettings.OlanUISettings.HomePageStyle == HomePageStyle.MagicButton);
         Settle();
         Assert(!classicLaunchPanel.IsVisible, "Magic style must replace the right quick launch panel");
         var button = page.FindControl<MagicLaunchButton>("MagicLaunchButton")!;
@@ -119,8 +119,8 @@ internal static class MagicHomeUiChecks
             "Cards on a custom background must use a translucent base color");
         Save(window, output, "home-magic-background.png");
 
-        config.Data.OlanSettings.IsHomePowerPlayVisible = false;
-        config.Data.OlanSettings.IsHomeImportVisible = false;
+        config.Data.OlanSettings.OlanUISettings.IsHomePowerPlayVisible = false;
+        config.Data.OlanSettings.OlanUISettings.IsHomeImportVisible = false;
         await config.Save();
         Settle();
         Save(window, output, "home-magic-two-sections.png");
@@ -174,8 +174,8 @@ internal static class MagicHomeUiChecks
         Settle();
         Assert(button.HoverGlowCenter == null, "Hover shadow must hide when the pointer leaves");
 
-        config.Data.OlanSettings.IsHomeNewsVisible = false;
-        config.Data.OlanSettings.IsHomeTaskCenterVisible = false;
+        config.Data.OlanSettings.OlanUISettings.IsHomeNewsVisible = false;
+        config.Data.OlanSettings.OlanUISettings.IsHomeTaskCenterVisible = false;
         await config.Save();
         Settle();
         Assert(!(bool)homeType.GetProperty("IsHomeSectionsVisible")!.GetValue(home)!, "All hidden sections must collapse the left area");
@@ -185,8 +185,8 @@ internal static class MagicHomeUiChecks
         window.Height = 470;
         window.RequestedThemeVariant = ThemeVariant.Dark;
         window.Background = new SolidColorBrush(Color.Parse("#1D1E21"));
-        config.Data.OlanSettings.IsHomeNewsVisible = true;
-        config.Data.OlanSettings.IsHomeTaskCenterVisible = true;
+        config.Data.OlanSettings.OlanUISettings.IsHomeNewsVisible = true;
+        config.Data.OlanSettings.OlanUISettings.IsHomeTaskCenterVisible = true;
         await config.Save();
         store.GetMethod("Clear")!.Invoke(null, null);
         Settle();
@@ -194,7 +194,7 @@ internal static class MagicHomeUiChecks
         Save(window, output, "home-magic-dark-small.png");
 
         settingsType.GetProperty("SelectedHomePageStyle")!.SetValue(settingsVm, "默认");
-        await WaitUntil(() => config.Data.OlanSettings.HomePageStyle == HomePageStyle.Classic);
+        await WaitUntil(() => config.Data.OlanSettings.OlanUISettings.HomePageStyle == HomePageStyle.Classic);
         Settle();
         var sectionItems = page.GetVisualDescendants().OfType<ListBox>().Single(l => l.Classes.Contains("card-list"))
             .Items.OfType<ListBoxItem>().ToArray();
@@ -220,7 +220,7 @@ internal static class MagicHomeUiChecks
         Directory.CreateDirectory(configRoot);
         var config = new DBManager(Path.Combine(configRoot, "config.json"));
         await config.InitializeAsync();
-        config.Data.OlanSettings.HomePageStyle = HomePageStyle.Classic;
+        config.Data.OlanSettings.OlanUISettings.HomePageStyle = HomePageStyle.Classic;
         await config.Save();
 
         var assembly = typeof(MainWindow).Assembly;
@@ -246,7 +246,7 @@ internal static class MagicHomeUiChecks
         host.Content = new settings { DataContext = settingsVm };
         Settle();
         settingsType.GetProperty("SelectedHomePageStyle")!.SetValue(settingsVm, "魔法按钮");
-        await WaitUntil(() => config.Data.OlanSettings.HomePageStyle == HomePageStyle.MagicButton);
+        await WaitUntil(() => config.Data.OlanSettings.OlanUISettings.HomePageStyle == HomePageStyle.MagicButton);
         Settle();
         host.Content = page;
         Settle();
@@ -266,9 +266,9 @@ internal static class MagicHomeUiChecks
         Settle();
         Assert(!(bool)homeType.GetProperty("HasHomeBackground")!.GetValue(home)!, "Removing the background must hide it immediately");
         settingsType.GetProperty("SelectedHomePageStyle")!.SetValue(settingsVm, "默认");
-        await WaitUntil(() => config.Data.OlanSettings.HomePageStyle == HomePageStyle.Classic);
+        await WaitUntil(() => config.Data.OlanSettings.OlanUISettings.HomePageStyle == HomePageStyle.Classic);
         settingsType.GetProperty("SelectedHomePageStyle")!.SetValue(settingsVm, "魔法按钮");
-        await WaitUntil(() => config.Data.OlanSettings.HomePageStyle == HomePageStyle.MagicButton);
+        await WaitUntil(() => config.Data.OlanSettings.OlanUISettings.HomePageStyle == HomePageStyle.MagicButton);
         Settle();
         Assert(!File.Exists(copied) && settingsType.GetProperty("CurrentHomeBackgroundPath")!.GetValue(settingsVm) == null &&
             !(bool)homeType.GetProperty("HasHomeBackground")!.GetValue(home)!,
@@ -314,7 +314,7 @@ internal static class MagicHomeUiChecks
 
     private static async Task CheckSettingsAsync(string output, DBManager config, UnitedCore core, Type settingsType)
     {
-        config.Data.OlanSettings.IsHomePowerPlayVisible = true;
+        config.Data.OlanSettings.OlanUISettings.IsHomePowerPlayVisible = true;
         await config.Save();
         var vm = Activator.CreateInstance(settingsType, config, core)!;
         var page = new settings { DataContext = vm };
@@ -323,7 +323,7 @@ internal static class MagicHomeUiChecks
         window.Show();
         page.FindControl<ComboBox>("SettingsCategoryComboBox")!.SelectedIndex = 1;
         page.FindControl<ComboBox>("HomePageStyleComboBox")!.SelectedItem = "魔法按钮";
-        await WaitUntil(() => config.Data.OlanSettings.HomePageStyle == HomePageStyle.MagicButton);
+        await WaitUntil(() => config.Data.OlanSettings.OlanUISettings.HomePageStyle == HomePageStyle.MagicButton);
         Settle();
         var button = page.FindControl<Button>("HomeSectionVisibilityButton")!;
         Save(window, output, "settings-interface.png");
@@ -334,13 +334,13 @@ internal static class MagicHomeUiChecks
         Assert(boxes.Select(b => b.Content as string).SequenceEqual(["MC新闻", "任务中心", "联机面板", "导入游戏实例"]),
             "Home section flyout must expose the four requested sections");
         boxes.Single(b => Equals(b.Content, "联机面板")).IsChecked = false;
-        Assert(config.Data.OlanSettings.IsHomePowerPlayVisible, "Checkbox editing must not write config before saving");
+        Assert(config.Data.OlanSettings.OlanUISettings.IsHomePowerPlayVisible, "Checkbox editing must not write config before saving");
         Save(window, output, "settings-home-sections.png");
         await ((IAsyncRelayCommand)settingsType.GetProperty("SaveHomeSectionsCommand")!.GetValue(vm)!).ExecuteAsync(null);
         Settle();
         var reload = new DBManager(Path.Combine(Path.GetDirectoryName(GetConfigPath(config))!, "config.json"));
         await reload.InitializeAsync();
-        Assert(!reload.Data.OlanSettings.IsHomePowerPlayVisible && !flyout.IsOpen, "Saved section visibility must persist and close");
+        Assert(!reload.Data.OlanSettings.OlanUISettings.IsHomePowerPlayVisible && !flyout.IsOpen, "Saved section visibility must persist and close");
         window.Close();
     }
 

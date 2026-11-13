@@ -1,9 +1,12 @@
 using OneLauncher.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using Avalonia.Controls.Notifications;
 using OneLauncher.Codes;
 using OneLauncher.Core.Global;
 using OneLauncher.ViewModel.Page;
+using OneLauncher.Views;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -103,6 +106,7 @@ internal partial class JavaInstallPaneViewModel : BaseViewModel, IPaneHost
         _installingTask = _unitedCore.TaskManager.CreateTask("Java 安装");
         CancellationTokenSource installCts = _installingTask.Token;
         _cts = installCts;
+        WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(StatusText, openTaskCenterAfterClick: true));
 
         try
         {
@@ -128,12 +132,14 @@ internal partial class JavaInstallPaneViewModel : BaseViewModel, IPaneHost
                 : $"Java {SelectedJavaVersion} 安装完成，已写入配置";
             _installingTask.SetDone();
             RefreshInstalledState();
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(StatusText, NotificationType.Success, openTaskCenterAfterClick: true));
             
         }
         catch (OperationCanceledException)
         {
             StatusText = "安装已取消";
             RefreshInstalledState();
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("Java 安装已取消。", NotificationType.Warning, openTaskCenterAfterClick: true));
         }
         catch (OlanException ex)
         {

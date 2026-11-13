@@ -63,6 +63,8 @@ internal partial class UserModelLoginPaneViewModel : BaseViewModel, IPaneHost
         }
         try
         {
+            if (!Init.ConfigManger.Data.DefaultSettings.AllowNonMicrosoftLogin)
+                throw new OlanException("无法登入", "外置登入前检查登入方式；配置项=DefaultSettings.AllowNonMicrosoftLogin。当前已禁用非微软账户登入，请使用微软账户");
             var um = await new LittleSkinAuthenticator().AuthenticateUseUserNameAndPasswordAsync(RUserName, RPassword);
             await ac.AddUser(um);
             WeakReferenceMessenger.Default.Send(new AccountPageDisplayListRefreshMessage());
@@ -86,6 +88,11 @@ internal partial class UserModelLoginPaneViewModel : BaseViewModel, IPaneHost
         if (!Regex.IsMatch(UserName, @"^[a-zA-Z0-9_]+$"))
         {
             WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("用户名包含非法字符！", Avalonia.Controls.Notifications.NotificationType.Warning));
+            return;
+        }
+        if (!Init.ConfigManger.Data.DefaultSettings.AllowNonMicrosoftLogin)
+        {
+            _ = OlanExceptionWorker.ForOlanException(new OlanException("无法添加账户", "添加离线账户前检查登入方式；配置项=DefaultSettings.AllowNonMicrosoftLogin。当前已禁用非微软账户登入，请使用微软账户"));
             return;
         }
         ac.AddUser(new UserModel(

@@ -148,13 +148,13 @@ public partial class MainWindow : Window
     {
         var appSettings = Init.ConfigManger.Data.OlanSettings;
         Resources["LeftButtonListItemMargin"] = new Thickness(
-            Math.Clamp(appSettings.LeftButtonListSpacing, 0, 30));
-        ServerListBoxItem.IsVisible = appSettings.IsServerPageVisible;
-        VersionListBoxItem.IsVisible = appSettings.IsVersionPageVisible;
-        GameDataListBoxItem.IsVisible = appSettings.IsGameDataPageVisible;
-        DownloadListBoxItem.IsVisible = appSettings.IsDownloadPageVisible;
-        ModsBrowserListBoxItem.IsVisible = appSettings.IsModsBrowserPageVisible;
-        AccountListBoxItem.IsVisible = appSettings.IsAccountPageVisible;
+            Math.Clamp(appSettings.OlanUISettings.LeftButtonListSpacing, 0, 30));
+        ServerListBoxItem.IsVisible = appSettings.OlanUISettings.IsServerPageVisible;
+        VersionListBoxItem.IsVisible = appSettings.OlanUISettings.IsVersionPageVisible;
+        GameDataListBoxItem.IsVisible = appSettings.OlanUISettings.IsGameDataPageVisible;
+        DownloadListBoxItem.IsVisible = appSettings.OlanUISettings.IsDownloadPageVisible;
+        ModsBrowserListBoxItem.IsVisible = appSettings.OlanUISettings.IsModsBrowserPageVisible;
+        AccountListBoxItem.IsVisible = appSettings.OlanUISettings.IsAccountPageVisible;
         HomeListBoxItem.IsVisible = true;
         SettingsListBoxItem.IsVisible = true;
 

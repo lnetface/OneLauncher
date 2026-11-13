@@ -16,7 +16,6 @@ namespace OneLauncher.Core.DefaultComponent.ConnectToolPower;
 public class MCTPower : IDisposable
 {
     private const string CoreExecutableName = "main.exe";
-    private const string CoreUrl = "https://api.mct.mczlf.loft.games/mainnew.exe";//"https://gitee.com/linfon18/minecraft-connect-tool-api/raw/master/mainnew.exe";
     private const string CoreMd5 = "08160296509deac13e7d12c8754de9ef";
 
     private readonly string coreDirectory;
@@ -34,18 +33,19 @@ public class MCTPower : IDisposable
     public static async Task<MCTPower> InitializationAsync()
     {
         string coreFileName = Path.Combine(Init.InstalledPath, CoreExecutableName);
+        var coreUrls = Init.ConfigManager.Data.DefaultSettings.Resources.ConnectCore;
         // 下载核心组件
         if (!File.Exists(coreFileName))
-            await Init.Download.DownloadFile(CoreUrl, coreFileName);
+            await Init.Download.DownloadFile(coreUrls, coreFileName);
         
         // 不管文件有没有，都跑一边校验
         string? currentMd5 = await Tools.GetFileMD5Async(coreFileName);
         if (currentMd5 == null)
-            throw new OlanException("无法初始化联机模块", $"下载联机核心后校验本地文件 MD5；文件/目录 coreFileName={coreFileName}；请求URL={CoreUrl}；期望MD5={CoreMd5}；实际MD5={currentMd5}。在对核心程序校验时发生意外错误", OlanExceptionAction.Error);
+            throw new OlanException("无法初始化联机模块", $"下载联机核心后校验本地文件 MD5；文件/目录 coreFileName={coreFileName}；请求URL={string.Join(", ", coreUrls)}；期望MD5={CoreMd5}；实际MD5={currentMd5}。在对核心程序校验时发生意外错误", OlanExceptionAction.Error);
         if (currentMd5 != CoreMd5)
         {
             File.Delete(coreFileName);
-            throw new OlanException("无法初始化联机模块", $"下载联机核心后校验本地文件 MD5；文件/目录 coreFileName={coreFileName}；请求URL={CoreUrl}；期望MD5={CoreMd5}；实际MD5={currentMd5}。【无法校验核心组件MD5】{Environment.NewLine}警告：您当前的网络环境可能不安全", OlanExceptionAction.FatalError);
+            throw new OlanException("无法初始化联机模块", $"下载联机核心后校验本地文件 MD5；文件/目录 coreFileName={coreFileName}；请求URL={string.Join(", ", coreUrls)}；期望MD5={CoreMd5}；实际MD5={currentMd5}。【无法校验核心组件MD5】{Environment.NewLine}警告：您当前的网络环境可能不安全", OlanExceptionAction.FatalError);
         }
         return new MCTPower(Init.InstalledPath,coreFileName);
     }

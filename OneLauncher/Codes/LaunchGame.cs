@@ -62,12 +62,12 @@ internal class Game
         Action<string>? outputHandler = null;
         try
         {
-            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("正在启动游戏..."));
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("正在启动游戏...", openTaskCenterAfterClick: true));
             startedHandler = () =>
-                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("游戏已启动！"));
+                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("游戏已启动！", openTaskCenterAfterClick: true));
             closedHandler = (code) =>
             {
-                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("游戏已关闭！"));
+                WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("游戏已关闭！", openTaskCenterAfterClick: true));
                 try
                 {
                     if (code != 0)
@@ -100,7 +100,7 @@ internal class Game
         #region 错误处理
         catch (OperationCanceledException)
         {
-            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("已取消启动游戏。"));
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("已取消启动游戏。", openTaskCenterAfterClick: true));
         }
         catch (OlanException ex)
         {   

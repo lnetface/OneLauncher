@@ -208,11 +208,13 @@ internal sealed partial class InstallPackPaneViewModel : BaseViewModel, IPaneHos
         {
             task.Cancel();
             InstallationStatus = TaskInfoStatus.Canceled;
+            Notify($"“{PackName}”整合包安装已取消。");
         }
         catch (Exception) when (task.Token!.IsCancellationRequested)
         {
             task.Cancel();
             InstallationStatus = TaskInfoStatus.Canceled;
+            Notify($"“{PackName}”整合包安装已取消。");
         }
         catch (Exception ex)
         {

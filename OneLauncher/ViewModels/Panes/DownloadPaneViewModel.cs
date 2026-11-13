@@ -225,6 +225,7 @@ internal partial class DownloadPaneViewModel : BaseViewModel, IPaneHost
             downloadTask.Cancel();
             DownloadStatus = TaskInfoStatus.Canceled;
             Dp = "下载已取消";
+            WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage($"MC {VersionName} 下载已取消。", openTaskCenterAfterClick: true));
         }
         catch (Exception ex)
         {

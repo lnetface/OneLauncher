@@ -25,6 +25,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OneLauncher.ViewModel.Page;
+using OneLauncher.Core.Global.Updater;
 
 namespace OneLauncher.Views.ViewModels;
 internal sealed class IdentifierVisibilityChangedMessage { }
@@ -167,11 +168,11 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
     private async Task SaveIdentifierVisibilityAsync(bool value)
     {
         var settings = _dbManger.Data.OlanSettings;
-        bool previous = settings.ShowIdentifiers;
+        bool previous = settings.OlanUISettings.ShowIdentifiers;
         IsSavingIdentifiers = true;
         try
         {
-            settings.ShowIdentifiers = value;
+            settings.OlanUISettings.ShowIdentifiers = value;
             await _dbManger.Save();
             WeakReferenceMessenger.Default.Send(new IdentifierVisibilityChangedMessage());
             WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(
@@ -179,7 +180,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         }
         catch (Exception ex)
         {
-            settings.ShowIdentifiers = previous;
+            settings.OlanUISettings.ShowIdentifiers = previous;
             SetProperty(ref showIdentifiers, previous, nameof(ShowIdentifiers));
             if (ex is OlanException olanException)
                 await OlanExceptionWorker.ForOlanException(olanException);
@@ -200,7 +201,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         if (Design.IsDesignMode)
             return;
 #endif
-        _dbManger.Data.OlanSettings.LeftButtonListSpacing = Math.Clamp(value, 0, 30);
+        _dbManger.Data.OlanSettings.OlanUISettings.LeftButtonListSpacing = Math.Clamp(value, 0, 30);
         _dbManger.Save();
     }
 
@@ -241,12 +242,12 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
 
     private static List<NavigationVisibilityItem> CreateNavigationItems(AppSettings settings) =>
     [
-        new(NavigationPage.Version, "版本管理", settings.IsVersionPageVisible),
-        new(NavigationPage.GameData, "游戏数据", settings.IsGameDataPageVisible),
-        new(NavigationPage.Server, "服务器收藏", settings.IsServerPageVisible),
-        new(NavigationPage.Download, "下载管理", settings.IsDownloadPageVisible),
-        new(NavigationPage.ModsBrowser, "资源检索", settings.IsModsBrowserPageVisible),
-        new(NavigationPage.Account, "账户管理", settings.IsAccountPageVisible)
+        new(NavigationPage.Version, "版本管理", settings.OlanUISettings.IsVersionPageVisible),
+        new(NavigationPage.GameData, "游戏数据", settings.OlanUISettings.IsGameDataPageVisible),
+        new(NavigationPage.Server, "服务器收藏", settings.OlanUISettings.IsServerPageVisible),
+        new(NavigationPage.Download, "下载管理", settings.OlanUISettings.IsDownloadPageVisible),
+        new(NavigationPage.ModsBrowser, "资源检索", settings.OlanUISettings.IsModsBrowserPageVisible),
+        new(NavigationPage.Account, "账户管理", settings.OlanUISettings.IsAccountPageVisible)
     ];
 
     private static void ApplyNavigationItems(AppSettings settings, IEnumerable<NavigationVisibilityItem> items)
@@ -255,12 +256,12 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         {
             switch (item.Page)
             {
-                case NavigationPage.Version: settings.IsVersionPageVisible = item.IsVisible; break;
-                case NavigationPage.GameData: settings.IsGameDataPageVisible = item.IsVisible; break;
-                case NavigationPage.Server: settings.IsServerPageVisible = item.IsVisible; break;
-                case NavigationPage.Download: settings.IsDownloadPageVisible = item.IsVisible; break;
-                case NavigationPage.ModsBrowser: settings.IsModsBrowserPageVisible = item.IsVisible; break;
-                case NavigationPage.Account: settings.IsAccountPageVisible = item.IsVisible; break;
+                case NavigationPage.Version: settings.OlanUISettings.IsVersionPageVisible = item.IsVisible; break;
+                case NavigationPage.GameData: settings.OlanUISettings.IsGameDataPageVisible = item.IsVisible; break;
+                case NavigationPage.Server: settings.OlanUISettings.IsServerPageVisible = item.IsVisible; break;
+                case NavigationPage.Download: settings.OlanUISettings.IsDownloadPageVisible = item.IsVisible; break;
+                case NavigationPage.ModsBrowser: settings.OlanUISettings.IsModsBrowserPageVisible = item.IsVisible; break;
+                case NavigationPage.Account: settings.OlanUISettings.IsAccountPageVisible = item.IsVisible; break;
             }
         }
     }
@@ -281,7 +282,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         {
             ApplyNavigationItems(settings, Items);
             // 默认服务器仅在保存时添加；没有游戏实例时保持服务器列表为空。
-            if (settings.IsServerPageVisible && _dbManger.Data.ServerList.Count == 0 &&
+            if (settings.OlanUISettings.IsServerPageVisible && _dbManger.Data.ServerList.Count == 0 &&
                 _gameDataManager.GetDefaultInstance() is { } defaultInstance)
             {
                 addedServer = new(Guid.NewGuid(), defaultInstance.InstanceId,
@@ -436,7 +437,7 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         _isLoadingHomeSettings = true;
         try
         {
-            SelectedHomePageStyle = settings.HomePageStyle == HomePageStyle.MagicButton ? "魔法按钮" : "默认";
+            SelectedHomePageStyle = settings.OlanUISettings.HomePageStyle == HomePageStyle.MagicButton ? "魔法按钮" : "默认";
         }
         finally
         {
@@ -460,10 +461,10 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
 
     private static List<HomeSectionVisibilityItem> CreateHomeSectionItems(AppSettings settings) =>
     [
-        new(HomeSection.News, "MC新闻", settings.IsHomeNewsVisible),
-        new(HomeSection.TaskCenter, "任务中心", settings.IsHomeTaskCenterVisible),
-        new(HomeSection.PowerPlay, "联机面板", settings.IsHomePowerPlayVisible),
-        new(HomeSection.Import, "导入游戏实例", settings.IsHomeImportVisible)
+        new(HomeSection.News, "MC新闻", settings.OlanUISettings.IsHomeNewsVisible),
+        new(HomeSection.TaskCenter, "任务中心", settings.OlanUISettings.IsHomeTaskCenterVisible),
+        new(HomeSection.PowerPlay, "联机面板", settings.OlanUISettings.IsHomePowerPlayVisible),
+        new(HomeSection.Import, "导入游戏实例", settings.OlanUISettings.IsHomeImportVisible)
     ];
 
     private static void ApplyHomeSectionItems(AppSettings settings, IEnumerable<HomeSectionVisibilityItem> items)
@@ -472,10 +473,10 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         {
             switch (item.Section)
             {
-                case HomeSection.News: settings.IsHomeNewsVisible = item.IsVisible; break;
-                case HomeSection.TaskCenter: settings.IsHomeTaskCenterVisible = item.IsVisible; break;
-                case HomeSection.PowerPlay: settings.IsHomePowerPlayVisible = item.IsVisible; break;
-                case HomeSection.Import: settings.IsHomeImportVisible = item.IsVisible; break;
+                case HomeSection.News: settings.OlanUISettings.IsHomeNewsVisible = item.IsVisible; break;
+                case HomeSection.TaskCenter: settings.OlanUISettings.IsHomeTaskCenterVisible = item.IsVisible; break;
+                case HomeSection.PowerPlay: settings.OlanUISettings.IsHomePowerPlayVisible = item.IsVisible; break;
+                case HomeSection.Import: settings.OlanUISettings.IsHomeImportVisible = item.IsVisible; break;
             }
         }
     }
@@ -557,18 +558,18 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
     private async Task SaveHomePageStyleAsync(HomePageStyle style)
     {
         var settings = _dbManger.Data.OlanSettings;
-        var previousStyle = settings.HomePageStyle;
+        var previousStyle = settings.OlanUISettings.HomePageStyle;
         IsSavingHomeAppearance = true;
         try
         {
-            settings.HomePageStyle = style;
+            settings.OlanUISettings.HomePageStyle = style;
             await _dbManger.Save();
             RefreshHomeBackgroundPath();
             WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage("主页样式已保存并应用", NotificationType.Success));
         }
         catch (Exception ex)
         {
-            settings.HomePageStyle = previousStyle;
+            settings.OlanUISettings.HomePageStyle = previousStyle;
             LoadHomeSettings(settings);
             await ShowSettingsException(ex);
         }
@@ -844,8 +845,8 @@ internal partial class SettingsPageViewModel : BaseViewModel, IPageHost, IListTe
         try
         {
             // 使用注入的实例来初始化属性
-            showIdentifiers = _dbManger.Data.OlanSettings.ShowIdentifiers;
-            LeftButtonListSpacing = _dbManger.Data.OlanSettings.LeftButtonListSpacing;
+            showIdentifiers = _dbManger.Data.OlanSettings.OlanUISettings.ShowIdentifiers;
+            LeftButtonListSpacing = _dbManger.Data.OlanSettings.OlanUISettings.LeftButtonListSpacing;
             _ = RefList();
             LoadHomeSettings(_dbManger.Data.OlanSettings);
             RefreshHomeLaunchItems();

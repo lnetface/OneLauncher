@@ -142,7 +142,7 @@ async Task CheckLegacyVersionListIgnored()
         await File.WriteAllTextAsync(configPath, original);
         var config = new DBManager(configPath);
         await config.InitializeAsync();
-        Assert(config.Data.OlanSettings.LeftButtonListSpacing == 17 && config.Data.AvailableJavas[21] == "java",
+        Assert(config.Data.OlanSettings.OlanUISettings.LeftButtonListSpacing == 17 && config.Data.AvailableJavas[21] == "java",
             "Ignoring the legacy version list must preserve global settings");
         Assert(await File.ReadAllTextAsync(configPath) == original,
             "Reading config must not trigger migration or rewrite it");
@@ -233,20 +233,20 @@ async Task CheckSharedManagers()
     var path = Path.Combine(root, "shared");
     var config = new DBManager(Path.Combine(path, "config.json"));
     await config.InitializeAsync();
-    Assert(config.Data.OlanSettings is { IsServerPageVisible: true, IsVersionPageVisible: false,
+    Assert(config.Data.OlanSettings.OlanUISettings is { IsServerPageVisible: true, IsVersionPageVisible: false,
         IsGameDataPageVisible: true, IsDownloadPageVisible: true, IsModsBrowserPageVisible: true, IsAccountPageVisible: true },
         "New navigation defaults must match the requested visibility");
     var oldSettings = JsonSerializer.Deserialize("{\"IsServerPageVisible\":false,\"IsVersionPageVisible\":true}",
         OneLauncherAppConfigsJsonContext.Default.AppSettings)!;
-    Assert(!oldSettings.IsServerPageVisible && oldSettings.IsVersionPageVisible && oldSettings.IsAccountPageVisible,
+    Assert(!oldSettings.OlanUISettings.IsServerPageVisible && oldSettings.OlanUISettings.IsVersionPageVisible && oldSettings.OlanUISettings.IsAccountPageVisible,
         "Explicit legacy choices must survive while missing new fields get defaults");
     int configEvents = 0;
     config.OnDataChanged += () => { using var _ = JsonDocument.Parse(File.ReadAllText(Path.Combine(path, "config.json"))); configEvents++; };
-    config.Data.OlanSettings.LeftButtonListSpacing = 19;
+    config.Data.OlanSettings.OlanUISettings.LeftButtonListSpacing = 19;
     await config.Save();
     var reload = new DBManager(Path.Combine(path, "config.json"));
     await reload.InitializeAsync();
-    Assert(configEvents == 1 && reload.Data.OlanSettings.LeftButtonListSpacing == 19, "Global settings save regression");
+    Assert(configEvents == 1 && reload.Data.OlanSettings.OlanUISettings.LeftButtonListSpacing == 19, "Global settings save regression");
     var accounts = new AccountManager(Path.Combine(path, "accounts.json"));
     await accounts.InitializeAsync();
     await accounts.Save();
@@ -303,7 +303,7 @@ async Task CheckSettingsUi()
     Assert(checkboxes.Length == 6, "Flyout must generate six bound checkboxes");
     var versionBox = checkboxes.Single(c => Equals(c.Content, "版本管理"));
     versionBox.IsChecked = true;
-    Assert(!config.Data.OlanSettings.IsVersionPageVisible, "Checkbox editing must not write live config");
+    Assert(!config.Data.OlanSettings.OlanUISettings.IsVersionPageVisible, "Checkbox editing must not write live config");
     flyout.Hide();
     Dispatcher.UIThread.RunJobs();
     flyout.ShowAt(button);
@@ -326,7 +326,7 @@ async Task CheckSettingsUi()
     checkboxes = grid.GetVisualDescendants().OfType<CheckBox>().ToArray();
     checkboxes.Single(c => Equals(c.Content, "服务器收藏")).IsChecked = true;
     await ((IAsyncRelayCommand)Get("SaveNavigationCommand")).ExecuteAsync(null);
-    Assert(config.Data.OlanSettings.IsServerPageVisible && config.Data.ServerList.Count == 0,
+    Assert(config.Data.OlanSettings.OlanUISettings.IsServerPageVisible && config.Data.ServerList.Count == 0,
         "Enabling servers without a game instance must save without inventing a server");
 
     flyout.ShowAt(button);
@@ -443,17 +443,17 @@ async Task CheckNavigationShell()
     main.versionPage = new OneLauncher.Views.version();
     var content = main.FindControl<TransitioningContentControl>("PageContent")!;
     var list = main.FindControl<ListBox>("SplitListBox")!;
-    config.Data.OlanSettings.IsVersionPageVisible = true;
+    config.Data.OlanSettings.OlanUISettings.IsVersionPageVisible = true;
     var apply = typeof(MainWindow).GetMethod("ApplyUiSettings", BindingFlags.NonPublic | BindingFlags.Instance)!;
     apply.Invoke(main, null);
     list.SelectedItem = main.FindControl<ListBoxItem>("VersionListBoxItem");
     Assert(ReferenceEquals(content.Content, main.versionPage), "Selecting visible navigation item must show its page");
-    config.Data.OlanSettings.IsVersionPageVisible = false;
-    config.Data.OlanSettings.IsGameDataPageVisible = false;
-    config.Data.OlanSettings.IsServerPageVisible = false;
-    config.Data.OlanSettings.IsDownloadPageVisible = false;
-    config.Data.OlanSettings.IsModsBrowserPageVisible = false;
-    config.Data.OlanSettings.IsAccountPageVisible = false;
+    config.Data.OlanSettings.OlanUISettings.IsVersionPageVisible = false;
+    config.Data.OlanSettings.OlanUISettings.IsGameDataPageVisible = false;
+    config.Data.OlanSettings.OlanUISettings.IsServerPageVisible = false;
+    config.Data.OlanSettings.OlanUISettings.IsDownloadPageVisible = false;
+    config.Data.OlanSettings.OlanUISettings.IsModsBrowserPageVisible = false;
+    config.Data.OlanSettings.OlanUISettings.IsAccountPageVisible = false;
     apply.Invoke(main, null);
     Assert(names.All(name => !main.FindControl<ListBoxItem>(name)!.IsVisible), "All optional navigation items must hide");
     Assert(main.FindControl<ListBoxItem>("HomeListBoxItem")!.IsVisible &&

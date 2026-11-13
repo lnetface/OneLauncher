@@ -228,6 +228,7 @@ internal partial class InstallModPaneViewModel : BaseViewModel, IPaneHost
         task.Cancel();
         InstallationStatus = TaskInfoStatus.Canceled;
         Dp = "安装已取消";
+        Notify($"“{ModName}”安装已取消。", openTaskCenter: true);
     }
 
     private void SetFailed(TaskInstance task, Exception exception)

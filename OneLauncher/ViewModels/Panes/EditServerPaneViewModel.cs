@@ -107,12 +107,13 @@ internal partial class EditServerPaneViewModel : BaseViewModel, IPaneHost
     {
         try
         {
+            ShowMessage("正在获取服务器信息……", NotificationType.Information, openTaskCenterAfterClick: true);
             await _editingServer.GetAASServerInfo();
             ServerDescription = _editingServer.Description;
             CurrentIcon = ServerIconLoader.Load(_editingServer);
             await _dbManager.Save();
             _onServerInfoUpdated?.Invoke();
-            ShowMessage("已更新服务器信息。", NotificationType.Success);
+            ShowMessage("服务器信息查询已结束，可在任务中心查看结果。", NotificationType.Information, openTaskCenterAfterClick: true);
         }
         catch (OlanException ex)
         {
@@ -227,9 +228,9 @@ internal partial class EditServerPaneViewModel : BaseViewModel, IPaneHost
         return string.IsNullOrWhiteSpace(safeName) ? "服务器" : safeName;
     }
 
-    private static void ShowMessage(string message, NotificationType type)
+    private static void ShowMessage(string message, NotificationType type, bool openTaskCenterAfterClick = false)
     {
-        WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(message, type));
+        WeakReferenceMessenger.Default.Send(new MainWindowShowFlyoutMessage(message, type, openTaskCenterAfterClick: openTaskCenterAfterClick));
     }
 
     [RelayCommand]

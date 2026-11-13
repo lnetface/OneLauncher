@@ -1,0 +1,25 @@
+{
+    "__TEXT__": [
+        "本文件为 OneLauncher 资源地址索引，用于在第三方地址失效时及时更新。",
+        "启动器仅从本文件读取下载地址与功能开关；可执行文件的校验值内置于启动器，校验不符即拒绝运行，本文件无法执行任何代码。",
+        "值为 null、缺失或空列表表示忽略；多源时以 Revision 最大者为准。"
+    ],
+    "Revision": 1,
+    "LatestLauncherVersion": "1.6.1.0",
+    "Announcement": null,
+    "Resources": {
+        "WindowsUpdater": [
+            "https://raw.githubusercontent.com/lnetface/OneLauncher/master/build/install.ps1"
+        ],
+        "ConnectCore": [
+            "https://api.mct.mczlf.loft.games/mainnew.exe"
+        ],
+        "SkinBodyRender": [
+            "https://crafatar-pub.neodium.fr/renders/body/${UUID}"
+        ]
+    },
+    "Function": {
+        "AllowOfflineLogin": null,
+        "AllowYggdrasilLogin": null
+    }
+}
