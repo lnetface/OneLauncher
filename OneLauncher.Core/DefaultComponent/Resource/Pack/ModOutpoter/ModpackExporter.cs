@@ -3,19 +3,21 @@ using OneLauncher.Core.Global;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
-using OneLauncher.Core.DefaultComponent.Resource.Pack;
 
 namespace OneLauncher.Core.DefaultComponent.Resource.Pack.ModOutpoter;
 
 /// <summary>
 /// 将启动器中的游戏实例导出为 Modrinth .mrpack 文件。
-/// 实例文件写入压缩包的 overrides 目录，因此导入时无需下载清单中的文件。
+/// mods 目录中能按哈希精确识别来源的模组写入清单 files（导入时在线下载），
+/// 其余实例文件（包括未识别的模组）写入压缩包的 overrides 目录。
+/// 对外入口为 ResourceInstallerService.ExportModpackAsync。
 /// </summary>
-public static class ModpackExporter
+internal static class ModpackExporter
 {
     private const string ManifestFileName = "modrinth.index.json";
+    private const int BufferSize = 128 * 1024;
 
-    public static async Task<string> ExportAsync(
+    internal static async Task<ModpackExportResult> ExportAsync(
         GameData gameData,
         IProgress<(int TotalFiles, int CompletedFiles, string FileName)>? progress = null,
         CancellationToken cancellationToken = default)
@@ -33,13 +35,20 @@ public static class ModpackExporter
 
         try
         {
+            // 先识别模组来源：命中的文件只写入清单，不再打包。
+            var (remoteFiles, overrideModCount, warnings) = await ModSourceResolver.ResolveAsync(
+                Path.Combine(instancePath, "mods"), progress, cancellationToken);
+
             var sourceFiles = Directory.EnumerateFiles(instancePath, "*", SearchOption.AllDirectories)
-                .Where(path => !string.Equals(Path.GetFullPath(path), Path.GetFullPath(outputPath), StringComparison.OrdinalIgnoreCase))
-                .Where(path => !string.Equals(Path.GetFullPath(path), Path.GetFullPath(temporaryPath), StringComparison.OrdinalIgnoreCase))
+                .Select(Path.GetFullPath)
+                .Where(path => !string.Equals(path, outputPath, StringComparison.OrdinalIgnoreCase))
+                .Where(path => !string.Equals(path, temporaryPath, StringComparison.OrdinalIgnoreCase))
                 .Where(path => !string.Equals(Path.GetRelativePath(instancePath, path), ManifestFileName, StringComparison.OrdinalIgnoreCase))
+                .Where(path => !remoteFiles.ContainsKey(path))
                 .ToArray();
 
-            var manifest = CreateManifest(gameData);
+            var manifest = await CreateManifestAsync(gameData, cancellationToken);
+            manifest.Files = [.. remoteFiles.Values.OrderBy(file => file.Path, StringComparer.Ordinal)];
             byte[] manifestBytes = JsonSerializer.SerializeToUtf8Bytes(
                 manifest,
                 MrpackJsonContext.Default.ModrinthManifest);
@@ -52,13 +61,13 @@ public static class ModpackExporter
                 FileMode.CreateNew,
                 FileAccess.Write,
                 FileShare.None,
-                bufferSize: 128 * 1024,
+                bufferSize: BufferSize,
                 options: FileOptions.Asynchronous | FileOptions.SequentialScan))
-            using (var archive = new ZipArchive(archiveFile, ZipArchiveMode.Create, leaveOpen: false))
+            await using (var archive = new ZipArchive(archiveFile, ZipArchiveMode.Create, leaveOpen: false))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var manifestEntry = archive.CreateEntry(ManifestFileName, CompressionLevel.Optimal);
-                await using (var manifestStream = manifestEntry.Open())
+                await using (var manifestStream = await manifestEntry.OpenAsync(cancellationToken))
                 {
                     await manifestStream.WriteAsync(manifestBytes, cancellationToken);
                 }
@@ -80,10 +89,10 @@ public static class ModpackExporter
                         FileMode.Open,
                         FileAccess.Read,
                         FileShare.Read,
-                        bufferSize: 128 * 1024,
+                        bufferSize: BufferSize,
                         options: FileOptions.Asynchronous | FileOptions.SequentialScan);
-                    await using var entryStream = entry.Open();
-                    await sourceStream.CopyToAsync(entryStream, 128 * 1024, cancellationToken);
+                    await using var entryStream = await entry.OpenAsync(cancellationToken);
+                    await sourceStream.CopyToAsync(entryStream, BufferSize, cancellationToken);
 
                     completedFiles++;
                     progress?.Report((totalFiles, completedFiles, packPath));
@@ -91,7 +100,7 @@ public static class ModpackExporter
             }
 
             File.Move(temporaryPath, outputPath, overwrite: true);
-            return outputPath;
+            return new ModpackExportResult(outputPath, remoteFiles.Count, overrideModCount, warnings);
         }
         catch (OperationCanceledException)
         {
@@ -110,7 +119,7 @@ public static class ModpackExporter
         }
     }
 
-    private static ModrinthManifest CreateManifest(GameData gameData)
+    private static async Task<ModrinthManifest> CreateManifestAsync(GameData gameData, CancellationToken cancellationToken)
     {
         var dependencies = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -128,7 +137,7 @@ public static class ModpackExporter
 
         if (loaderName != null)
         {
-            dependencies[loaderName] = GetLoaderVersion(gameData);
+            dependencies[loaderName] = await GetLoaderVersionAsync(gameData, cancellationToken);
         }
 
         return new ModrinthManifest
@@ -137,12 +146,11 @@ public static class ModpackExporter
             Game = "minecraft",
             VersionId = gameData.InstanceId,
             Name = gameData.Name,
-            Dependencies = dependencies,
-            Files = null
+            Dependencies = dependencies
         };
     }
 
-    private static string GetLoaderVersion(GameData gameData)
+    private static async Task<string> GetLoaderVersionAsync(GameData gameData, CancellationToken cancellationToken)
     {
         string metadataName = gameData.ModLoader switch
         {
@@ -156,7 +164,8 @@ public static class ModpackExporter
         if (!File.Exists(metadataPath))
             throw new OlanException("导出失败", $"读取实例元数据并写入导出的整合包；文件/目录 metadataPath={metadataPath}。找不到加载器元数据：{metadataPath}", OlanExceptionAction.Error);
 
-        using JsonDocument metadata = JsonDocument.Parse(File.ReadAllText(metadataPath));
+        await using var metadataStream = File.OpenRead(metadataPath);
+        using JsonDocument metadata = await JsonDocument.ParseAsync(metadataStream, cancellationToken: cancellationToken);
         if (metadata.RootElement.TryGetProperty("loader", out JsonElement loader) &&
             loader.TryGetProperty("version", out JsonElement loaderVersion) &&
             loaderVersion.ValueKind == JsonValueKind.String &&

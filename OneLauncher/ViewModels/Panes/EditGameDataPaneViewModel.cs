@@ -4,11 +4,11 @@ using Avalonia.Controls.Notifications;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using OneLauncher.Codes;
-using OneLauncher.Core.DefaultComponent.Resource.Pack.ModOutpoter;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Global.ModelDataMangers;
 using OneLauncher.Core.Helper;
@@ -185,28 +185,49 @@ internal partial class EditGameDataPaneViewModel : BaseViewModel, IPaneHost
     [RelayCommand]
     private async Task ZipThisInstance()
     {
+        var task = _taskManager.CreateTask($"导出整合包 {editingGameData.Name}");
+        var token = task.Token!.Token;
+        task.SetProgress("正在识别模组来源...", 0);
         WeakReferenceMessenger.Default.Send(
-            new MainWindowShowFlyoutMessage("正在将实例打包为整合包，请稍候..."));
+            new MainWindowShowFlyoutMessage("正在导出整合包，可在任务列表查看进度"));
+
+        // 来源识别与打包两个阶段各自报告总数，进度在阶段切换时从 0 重新开始。
+        var progress = new Progress<(int TotalFiles, int CompletedFiles, string FileName)>(p =>
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (task.Status != TaskInfoStatus.Running) return;
+                double percentage = p.TotalFiles > 0 ? Math.Clamp(100d * p.CompletedFiles / p.TotalFiles, 0, 99) : 0;
+                task.SetProgress(p.FileName, percentage);
+            }));
 
         try
         {
-            string outputPath = await ModpackExporter.ExportAsync(editingGameData);
+            var result = await Task.Run(() => _resourceInstaller.ExportModpackAsync(editingGameData, progress, token), token);
+            token.ThrowIfCancellationRequested();
+            task.SetProgress($"已导出：{result.OutputPath}", 100);
+            task.SetDone();
             WeakReferenceMessenger.Default.Send(
                 new MainWindowShowFlyoutMessage(
-                    $"整合包已完成，文件已存放在实例根目录：{outputPath}",
+                    $"整合包已导出：{result.RemoteFileCount} 个在线下载 / {result.OverrideModCount} 个本地打包",
                     NotificationType.Success));
+            if (result.Warnings.Count > 0)
+                WeakReferenceMessenger.Default.Send(
+                    new MainWindowShowFlyoutMessage(string.Join(Environment.NewLine, result.Warnings), NotificationType.Warning));
         }
-        catch (OperationCanceledException)
+        catch (Exception) when (token.IsCancellationRequested)
         {
+            task.Cancel();
             WeakReferenceMessenger.Default.Send(
                 new MainWindowShowFlyoutMessage("整合包导出已取消。", NotificationType.Warning));
         }
         catch (OlanException exception)
         {
+            task.SetFailed(exception);
             await OlanExceptionWorker.ForOlanException(exception, () => _ = ZipThisInstance());
         }
         catch (Exception exception)
         {
+            task.SetFailed(exception);
             await OlanExceptionWorker.ForUnknowException(exception, () => _ = ZipThisInstance());
         }
     }

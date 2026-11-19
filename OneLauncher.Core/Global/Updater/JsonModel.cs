@@ -25,7 +25,7 @@ internal class ResourceManifest
 }
 internal class ApiKeyResouces
 {
-    public string? CurseForgeApiKey { get; set; }
+    public string? CurseForge { get; set; }
 }
 // 每项为按顺序尝试的候选地址；null 或空列表表示忽略
 internal class ManifestResources

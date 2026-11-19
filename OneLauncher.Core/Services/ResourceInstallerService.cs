@@ -3,6 +3,7 @@ using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService;
 using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.CurseForge;
 using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.Modrinth;
 using OneLauncher.Core.DefaultComponent.Resource.Pack;
+using OneLauncher.Core.DefaultComponent.Resource.Pack.ModOutpoter;
 using OneLauncher.Core.DefaultComponent.Downloader.DownloadMinecraftProviders;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Helper.Models;
@@ -56,6 +57,26 @@ public sealed class ResourceInstallerService
         cancellationToken.ThrowIfCancellationRequested();
         return await ModpackImporter.ImportFromMrpackAsync(
             package.FilePath, Init.GameRootPath, progress, cancellationToken, package.Parser);
+    }
+
+    /// <summary>
+    /// 将实例导出为 .mrpack，输出到实例根目录（同名文件会被覆盖）。
+    /// mods 目录中能按哈希在 Modrinth / CurseForge 精确识别的模组写入清单下载链接，
+    /// 无法识别的模组与其他实例文件一起打包进 overrides。
+    /// </summary>
+    /// <param name="instance">要导出的实例。</param>
+    /// <param name="progress">（总数、已完成数、当前文件或阶段说明）；先报告来源识别，再报告打包。允许为 null。</param>
+    /// <param name="cancellationToken">取消哈希计算、在线查询与打包；取消时删除临时文件。</param>
+    /// <returns>输出路径、在线下载与本地打包的模组数，以及来源识别的降级提示。</returns>
+    /// <exception cref="OneLauncher.Core.Global.OlanException">实例目录、加载器元数据缺失或写入失败。在线识别失败不会抛出，只记入 Warnings。</exception>
+    public Task<ModpackExportResult> ExportModpackAsync(
+        GameData instance,
+        IProgress<(int TotalFiles, int CompletedFiles, string FileName)>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(instance);
+        cancellationToken.ThrowIfCancellationRequested();
+        return ModpackExporter.ExportAsync(instance, progress, cancellationToken);
     }
 
     /// <summary>
