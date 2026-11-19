@@ -1,5 +1,6 @@
 using OneLauncher.Core.DefaultComponent.Resource;
-using OneLauncher.Core.DefaultComponent.Resource.ModService.Modrinth;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.CurseForge;
 using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.Modrinth;
 using OneLauncher.Core.DefaultComponent.Resource.Pack;
 using OneLauncher.Core.DefaultComponent.Downloader.DownloadMinecraftProviders;
@@ -21,12 +22,28 @@ public sealed class ResourceInstallerService
             progress?.Report((p.c, p.f));
         }),token);
     }
-    /// <summary>获取最新 .mrpack 的网络流并解析信息；调用方负责释放返回值。</summary>
+
+    /// <summary>获取 Modrinth 最新 .mrpack 并解析信息；调用方负责释放返回值。</summary>
     public Task<ModpackDownload> GetModpackInfoAsync(string projectId, CancellationToken cancellationToken = default)
+        => GetModpackInfoAsync(projectId, ResourceSource.Modrinth, cancellationToken);
+
+    /// <summary>
+    /// 获取指定平台整合包的最新文件并解析信息；调用方负责释放返回值。
+    /// CurseForge 整合包会被转换为等价的 .mrpack，后续导入流程与 Modrinth 相同。
+    /// </summary>
+    public Task<ModpackDownload> GetModpackInfoAsync(
+        string projectId,
+        ResourceSource source,
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
         cancellationToken.ThrowIfCancellationRequested();
-        return GetModpackModrinth.GetAsync(projectId, cancellationToken);
+        return source switch
+        {
+            ResourceSource.Modrinth => GetModpackModrinth.GetAsync(projectId, cancellationToken),
+            ResourceSource.CurseForge => GetModpackCurseForge.GetAsync(projectId, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(source))
+        };
     }
 
     /// <summary>复用预览时的包文件及解析器导入新实例，取消令牌沿既有安装流程传入 DownloadMinecraft。</summary>
@@ -42,13 +59,14 @@ public sealed class ResourceInstallerService
     }
 
     /// <summary>
-    /// 从 Modrinth 安装适配实例 Minecraft 版本的最新光影包到 shaderpacks。
+    /// 安装适配实例 Minecraft 版本的最新光影包到 shaderpacks。
     /// 不检查或安装 Iris、OptiFine 等依赖，也不自动启用光影包。
     /// </summary>
     /// <param name="progress">文件数量、百分比和阶段进度；允许为 null。</param>
-    /// <param name="shaderPackId">Modrinth 光影项目 ID 或 slug。</param>
+    /// <param name="shaderPackId">光影项目 ID（Modrinth 可用 slug，CurseForge 为整数 ID）。</param>
     /// <param name="instance">用于确定 Minecraft 版本和安装目录的目标实例。</param>
     /// <param name="verifySha1">是否校验服务端提供的 SHA1，包括已存在的文件。</param>
+    /// <param name="source">资源所属平台。</param>
     /// <param name="cancellationToken">取消元数据获取、下载及校验。</param>
     /// <exception cref="OneLauncher.Core.Global.OlanException">没有兼容版本或下载文件信息无效。</exception>
     public async Task InstallShaderPack(
@@ -56,6 +74,7 @@ public sealed class ResourceInstallerService
         string shaderPackId,
         GameData instance,
         bool verifySha1 = true,
+        ResourceSource source = ResourceSource.Modrinth,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(instance);
@@ -63,46 +82,60 @@ public sealed class ResourceInstallerService
         cancellationToken.ThrowIfCancellationRequested();
 
         progress?.Report((0, 0, 0, "正在获取光影包版本信息..."));
-        var file = await GetShaderPackModrinth.GetDownloadInfoAsync(
-            shaderPackId,
-            instance.VersionId,
-            Path.Combine(instance.InstancePath, "shaderpacks"),
-            cancellationToken);
+        string shaderPackPath = Path.Combine(instance.InstancePath, "shaderpacks");
+        var file = source switch
+        {
+            ResourceSource.Modrinth => await GetShaderPackModrinth.GetDownloadInfoAsync(
+                shaderPackId, instance.VersionId, shaderPackPath, cancellationToken),
+            ResourceSource.CurseForge => await GetShaderPackCurseForge.GetDownloadInfoAsync(
+                shaderPackId, instance.VersionId, shaderPackPath, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(source))
+        };
 
         await ResourceFileInstaller.InstallAsync(
             [file], progress, "光影包", verifySha1, cancellationToken);
     }
 
+    /// <summary>
+    /// 安装适配实例 Minecraft 版本与加载器的最新模组到 mods，可选一并安装一级必需依赖。
+    /// </summary>
+    /// <param name="progress">文件数量、百分比和阶段进度；允许为 null。</param>
+    /// <param name="modId">模组项目 ID（Modrinth 可用 slug，CurseForge 为整数 ID）。</param>
+    /// <param name="instance">目标实例。</param>
+    /// <param name="modType">按此加载器筛选模组版本。</param>
+    /// <param name="includeDependencies">是否安装必需依赖。</param>
+    /// <param name="verifySha1">是否校验服务端提供的 SHA1。</param>
+    /// <param name="source">资源所属平台。</param>
+    /// <param name="cancellationToken">取消元数据获取、下载及校验。</param>
+    /// <exception cref="OneLauncher.Core.Global.OlanException">没有兼容版本或下载文件信息无效。</exception>
     public async Task InstallMod(
-        IProgress<(long AllFiles, long DownedFiles,double Percentage, string DowingFileName)> progress,
+        IProgress<(long AllFiles, long DownedFiles,double Percentage, string DowingFileName)>? progress,
         string modId,
         GameData instance,
         ModEnum modType,
         bool includeDependencies = true,
         bool verifySha1 = true,
+        ResourceSource source = ResourceSource.Modrinth,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(instance);
+        ArgumentException.ThrowIfNullOrWhiteSpace(modId);
+        cancellationToken.ThrowIfCancellationRequested();
+
         var modPath = Path.Combine(instance.InstancePath, "mods");
-        var GetTask = new GetModrinth(modId,instance.VersionId, modType, modPath);
-        await GetTask.Init(cancellationToken, includeDependencies);
-
-        // 获取主 Mod 文件信息
-        NdDowItem? mainMod = GetTask.GetDownloadInfos();
-        if (!mainMod.HasValue)
-            throw new OneLauncher.Core.Global.OlanException(
-                "安装模组失败", $"查询并筛选 Modrinth 模组兼容版本；参数 modId={modId}；参数 modType={modType}；文件/目录 modPath={modPath}；Minecraft={instance.VersionId}。未找到项目 {modId} 适配 Minecraft {instance.VersionId} 和 {modType} 的模组版本。");
-
-        List<NdDowItem> allFiles = new List<NdDowItem> { (NdDowItem)mainMod };
-
-        // 如果需要下载依赖项，则获取依赖项信息并添加到下载列表
-        if (includeDependencies)
+        var files = source switch
         {
-            List<NdDowItem> dependencies = GetTask.GetDependenciesInfos();
-            if (dependencies != null)
-                allFiles.AddRange(dependencies);
-        }
+            ResourceSource.Modrinth => await GetModModrinth.GetAsync(
+                modId, instance.VersionId, modType, modPath, includeDependencies, cancellationToken),
+            ResourceSource.CurseForge => await GetModCurseForge.GetAsync(
+                modId, instance.VersionId, modType, modPath, includeDependencies, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(source))
+        };
+        if (files.Count == 0)
+            throw new OlanException(
+                "安装模组失败", $"查询并筛选 {source} 模组兼容版本；参数 modId={modId}；参数 modType={modType}；文件/目录 modPath={modPath}；Minecraft={instance.VersionId}。未找到项目 {modId} 适配 Minecraft {instance.VersionId} 和 {modType} 的模组版本。");
 
         await ResourceFileInstaller.InstallAsync(
-            allFiles, progress, "Mod", verifySha1, cancellationToken);
+            files, progress, "Mod", verifySha1, cancellationToken);
     }
 }

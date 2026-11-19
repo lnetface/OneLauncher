@@ -15,5 +15,6 @@ public class ModInfo
     public byte[]? Icon { get; set; } // 可能为null
     public bool IsEnabled { get; set; }
     public bool IsUnknown { get; set; }
-    public string fileName;
+    public string fileName { get; set; }
+    public ModEnum mod { get; set; }
 }

@@ -18,6 +18,10 @@
             "https://crafatar-pub.neodium.fr/renders/body/${UUID}"
         ]
     },
+    "ApiKeys":
+    {
+        "CurseForge" : "$2a$10$n8SzKXZpu/tdO16L1U25F.chLS.IXyWsIEJS49zQNCpvXk/djberC"
+    },
     "Function": {
         "AllowOfflineLogin": null,
         "AllowYggdrasilLogin": null

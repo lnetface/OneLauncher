@@ -36,7 +36,15 @@
                                     <Image Source="{Binding Icon}" Stretch="UniformToFill"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" Spacing="3">
-                                    <TextBlock Text="{Binding Info.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <!-- 加载器小图标：复用 UiOptionConverter 的 ModEnum 映射；未知模组不显示 -->
+                                        <controls:ThemeIcon Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                            IsVisible="{Binding !Info.IsUnknown}"
+                                                            IconKey="{Binding Info.mod, Converter={StaticResource UiOptionConverter}, ConverterParameter=Icon}"
+                                                            ToolTip.Tip="{Binding Info.mod, Converter={StaticResource UiOptionConverter}}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Info.Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
                                     <TextBlock Classes="pane-help" Text="{Binding Info.Description}" MaxLines="2" TextTrimming="CharacterEllipsis"
                                                ToolTip.Tip="{Binding Info.Description}"/>
                                     <TextBlock Classes="pane-help" Text="{Binding Info.Version}" IsVisible="{Binding HasVersion}"/>

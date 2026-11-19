@@ -13,7 +13,8 @@ using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
-using OneLauncher.Core.DefaultComponent.Resource.ModService.Modrinth;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.Modrinth;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Global.ModelDataMangers;
 using OneLauncher.Core.Helper.Models;
@@ -69,18 +70,17 @@ internal static class ShaderUiChecks
         typeof(Init).GetProperty("Download", BindingFlags.NonPublic | BindingFlags.Static)!.SetValue(null, download);
 
         // 共用搜索入口保留模组筛选，并正确编码光影类型与特殊关键词。
-        var search = new SearchModrinth();
-        await search.ToSearch("光影 & + ?", ResourceType.ShaderPack);
+        await SearchModrinth.SearchAsync("光影 & + ?", ResourceType.ShaderPack);
         var query = Uri.UnescapeDataString(handler.Requests[^1].Query);
         Assert(query.Contains("project_type:shader") && !query.Contains("categories:"), "shader query must ignore mod loaders");
         Assert(handler.Requests[^1].Query.Contains(Uri.EscapeDataString("光影 & + ?")), "keyword URL encoding");
-        await search.ToSearch("");
+        await SearchModrinth.SearchAsync("");
         query = Uri.UnescapeDataString(handler.Requests[^1].Query);
         Assert(query.Contains("project_type:mod") && query.Contains("categories:quilt"), "default search preserves mod facets");
         using (var canceled = new CancellationTokenSource())
         {
             canceled.Cancel();
-            try { await search.ToSearch("", ResourceType.ShaderPack, canceled.Token); throw new Exception("expected cancellation"); }
+            try { await SearchModrinth.SearchAsync("", ResourceType.ShaderPack, cancellationToken: canceled.Token); throw new Exception("expected cancellation"); }
             catch (OperationCanceledException) { }
         }
 

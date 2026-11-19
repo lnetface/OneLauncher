@@ -1,9 +1,6 @@
-using OneLauncher.Core.DefaultComponent.Resource.ModService.Modrinth;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.Modrinth;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Helper.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.AutoInformation.RecommededMods;
 internal class RecommendedModInstaller
@@ -17,44 +14,29 @@ internal class RecommendedModInstaller
     private readonly List<string> mods;
     internal async Task InstallAsync(IProgress<(int current,string file)> progress,CancellationToken token = default)
     {
-        var modsGetterServices = mods
-            .Select(mod => 
-                new GetModrinth(
-                    mod,
-                    gameData.VersionId, 
-                    gameData.ModLoader, 
-                    Path.Combine(gameData.InstancePath, "mods")))
-            .ToList();
-        await Task.WhenAll(modsGetterServices.Select(async service =>
-            {
-                try
-                {
-                    await service.Init(token);
-                }
-                catch (OlanException ex)
-                {
-                    if (ex.Title != "找不到模组")
-                        throw;
-                }
-            }));
-        List<NdDowItem> items = new List<NdDowItem>();
-        foreach (var service in modsGetterServices)
-        {
-            var main = service.GetDownloadInfos();
-            if (!main.HasValue)
-                continue;
-
-            items.Add(main.Value);
-            items.AddRange(service.GetDependenciesInfos() ?? []);
-        }
-        // 共同依赖和重复推荐项可能指向同一文件，批量下载前统一去重。
-        var pathComparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
-        items = items.DistinctBy(item => Path.GetFullPath(item.path), pathComparer).ToList();
+        string modsDirectory = Path.Combine(gameData.InstancePath, "mods");
+        // 没有适配当前版本/加载器的推荐模组返回空列表，直接跳过。
+        var resolved = await Task.WhenAll(mods.Select(mod => ResolveAsync(mod, modsDirectory, token)));
+        // 共同依赖和重复推荐项指向同一文件时，由 DownloadListAsync 统一按路径去重。
+        List<NdDowItem> items = resolved.SelectMany(files => files).ToList();
         await Init.Download.DownloadListAsync(new Progress<(int c, string f)>(p =>
         {
             progress?.Report((p.c, p.f));
         }), items, Init.ConfigManager.Data.OlanSettings.MaximumDownloadThreads, token);
+    }
+
+    // 推荐模组是可选增强：单个项目的元数据异常只跳过该项目，不影响其余推荐模组。
+    private async Task<List<NdDowItem>> ResolveAsync(string projectId, string modsDirectory, CancellationToken token)
+    {
+        try
+        {
+            return await GetModModrinth.GetAsync(
+                projectId, gameData.VersionId, gameData.ModLoader, modsDirectory, cancellationToken: token);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or System.Text.Json.JsonException or OlanException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[RecommendedModInstaller] 跳过推荐模组 {projectId}：{ex.Message}");
+            return [];
+        }
     }
 }

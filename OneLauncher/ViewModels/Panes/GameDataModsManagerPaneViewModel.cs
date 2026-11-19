@@ -101,7 +101,10 @@ internal partial class GameDataModsManagerPaneViewModel : BaseViewModel, IPaneHo
     [RelayCommand]
     private async Task RefreshModsAsync()
     {
-        AllMods = (await _modService.GetModsAsync()).Select(x => new InstanceModItem(x,_modService)).ToList();
+        var items = await Task.Run(async () =>
+            (await _modService.GetModsAsync().ConfigureAwait(false))
+                .Select(x => new InstanceModItem(x, _modService)).ToList());
+        AllMods = items; // await 回到 UI 线程后再赋值，触发绑定更新
     }
 
     partial void OnAllModsChanged(List<InstanceModItem> value) => FilterMods();

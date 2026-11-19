@@ -46,22 +46,12 @@ internal partial class AccountPageViewModel : BaseViewModel, IPageHost, IListTem
     public bool ShowIdentifiers => _dbManager.Data.OlanSettings.OlanUISettings.ShowIdentifiers;
     private UserModelLoginPaneViewModelFactory _userModelLoginPaneFactory;
     // 刷新
-    public Task RefList()
-    {
-        if (Dispatcher.UIThread.CheckAccess())
-        {
-            RebuildList();
-            return Task.CompletedTask;
-        }
-        return Dispatcher.UIThread.InvokeAsync(RebuildList).GetTask();
-    }
-
-    private void RebuildList()
+    public async Task RefList()
     {
         // 在刷新列表时，判断每一项是否为默认用户
         UserModel? defaultUser = _accountManager.GetDefaultUser();
 
-        Items = new ObservableCollection<UserItem>(_accountManager.GetAllUsers()
+        var item = new ObservableCollection<UserItem>(_accountManager.GetAllUsers()
             .Select(user => new UserItem()
             {
                 um = user,
@@ -71,6 +61,10 @@ internal partial class AccountPageViewModel : BaseViewModel, IPageHost, IListTem
                 // 在创建 UserItem 时，就设置好 IsDefault 属性
                 IsDefault = (defaultUser != null && user.uuid == defaultUser.uuid)
             }));
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Items = item;
+        });
     }
     [RelayCommand]
     public async Task Refresh()
@@ -120,7 +114,7 @@ internal partial class AccountPageViewModel : BaseViewModel, IPageHost, IListTem
         {
             try
             {
-                _ = RefList();
+                _ = RefList().ConfigureAwait(false);
             }
             catch (NullReferenceException ex)
             {

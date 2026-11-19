@@ -65,8 +65,8 @@ public class MrpackParser
     /// <summary>
     /// 从清单中获取所有需要下载的 Mod 文件信息。
     /// </summary>
-    /// <param name="modsPath">要将Mod下载到的目标目录 (例如 .../instance/xxxx/mods)。</param>
-    /// <returns>一个包含所有Mod下载信息的列表。</returns>
+    /// <param name="instancePath">实例根目录，清单中的相对路径以此为根。</param>
+    /// <returns>一个包含所有Mod下载信息的列表；没有下载地址的条目被跳过。</returns>
     public List<NdDowItem> GetModFiles(string instancePath)
     {
         var files = _manifest.Files;
@@ -74,16 +74,20 @@ public class MrpackParser
 
         foreach (var file in files ?? Enumerable.Empty<ModrinthFile>())
         {
+            string? url = file.Downloads?.FirstOrDefault(download => !string.IsNullOrWhiteSpace(download));
+            if (url == null || string.IsNullOrWhiteSpace(file.Path))
+                continue;
+
             string relativePath = file.Path.Replace('/', Path.DirectorySeparatorChar);
             string finalPath = Path.Combine(instancePath, relativePath);
             if (!Path.GetFullPath(finalPath).StartsWith(Path.GetFullPath(instancePath) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             items.Add(new NdDowItem(
-                Url: file.Downloads.FirstOrDefault(),
+                Url: url,
                 Path: finalPath,
-                Size: (int)file.FileSize,
-                Sha1: file.Hashes.GetValueOrDefault("sha1")
+                Size: (int)Math.Clamp(file.FileSize, 0, int.MaxValue),
+                Sha1: file.Hashes?.GetValueOrDefault("sha1")
             ));
         }
 

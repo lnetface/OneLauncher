@@ -30,7 +30,7 @@ internal partial class DownloadPageViewModel : BaseViewModel,IPageHost,IListTemp
         try
         {
             var versionInfos =
-                await VersionsList.GetOrRefreshVersionListAsync();
+                await Task.Run(() =>VersionsList.GetOrRefreshVersionListAsync());
                 //_unitedCore.MojangVersionList;
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -47,7 +47,7 @@ internal partial class DownloadPageViewModel : BaseViewModel,IPageHost,IListTemp
     {
         this._viewFactory = viewFactory;
         this._unitedCore = unitedCore;
-        _=RefList();
+        _=RefList().ConfigureAwait(false);
     }
     [ObservableProperty] private bool isLoaded = false;
     [ObservableProperty] private ObservableCollection<VersionBasicInfo> items = new();

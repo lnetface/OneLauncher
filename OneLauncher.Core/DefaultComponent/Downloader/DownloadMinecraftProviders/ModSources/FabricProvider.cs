@@ -3,8 +3,7 @@ using OneLauncher.Core.DefaultComponent.Resource.Mod.Loader.Fabric;
 using OneLauncher.Core.DefaultComponent.Downloader.DownloadMinecraftProviders;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Helper.Models;
-using OneLauncher.Core.DefaultComponent.Mod.ModService.Modrinth;
-using OneLauncher.Core.DefaultComponent.Resource.ModService.Modrinth;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.Modrinth;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -60,17 +59,20 @@ internal class FabricProvider : IModLoaderConcreteProviders
         if (_context.IsDownloadFabricWithAPI)
         {
             reportStatus?.Invoke($"已收集 {fabricDependencies.Count} 个 Fabric 库条目，正在查询 Fabric API 及其依赖信息...");
-            var modrinthTask = new GetModrinth(
-                "fabric-api", 
-                _context.ID,  
-                ModEnum.fabric,
-                Path.Combine(_context.UserInfo.FirstOrDefault(x => x.ModLoader == ModEnum.fabric)!.InstancePath, "mods") 
-            );
-            await modrinthTask.Init();
-            var fabricApiFile = modrinthTask.GetDownloadInfos();
-            if (fabricApiFile.HasValue)
+            // Fabric API 只是附加内容：没有兼容版本或元数据请求失败时跳过，不中断版本安装。
+            try
             {
-                fabricDependencies.Add(fabricApiFile.Value);
+                var fabricApiFile = await GetModModrinth.GetAsync(
+                    "fabric-api",
+                    _context.ID,
+                    ModEnum.fabric,
+                    Path.Combine(_context.UserInfo.FirstOrDefault(x => x.ModLoader == ModEnum.fabric)!.InstancePath, "mods"),
+                    includeDependencies: false);
+                fabricDependencies.AddRange(fabricApiFile);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or OlanException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[FabricProvider] 获取 Fabric API 失败，已跳过：{ex.Message}");
             }
         }
         return fabricDependencies;

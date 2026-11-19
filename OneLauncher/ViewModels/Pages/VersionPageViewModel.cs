@@ -109,7 +109,8 @@ internal partial class VersionPageViewModel : BaseViewModel, IPageHost, IListTem
 
     private void RebuildList()
     {
-        Items = new ObservableCollection<VersionItem>(_versionListManager.GetVersions().Select(x => new VersionItem(x, _unitedCore)));
+        var items = new ObservableCollection<VersionItem>(_versionListManager.GetVersions().Select(x => new VersionItem(x, _unitedCore)));
+        Dispatcher.UIThread.Invoke(() => Items = items);
     }
     public VersionPageViewModel(UnitedCore unitedCore, NewGameDataPaneViewModelFactory newGameDataPaneViewModelFactory)
     {
@@ -132,7 +133,7 @@ internal partial class VersionPageViewModel : BaseViewModel, IPageHost, IListTem
         else
 #endif
         {
-            _ = RefList();
+            _ = RefList().ConfigureAwait(false);
             _versionListManager.OnDataChanged += OnVersionDataChanged;
         } 
     }

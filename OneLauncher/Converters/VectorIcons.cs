@@ -16,4 +16,9 @@ public static class VectorIcons
     public static Geometry TaskCompleted { get; } = Geometry.Parse(SKGT.TaskCompleted);
     public static Geometry JavaLogo { get; } = Geometry.Parse(SKGT.JavaLogo);
     public static Geometry MicrosoftLogo { get; } = Geometry.Parse(SKGT.MicrosoftLogo);
+    public static Geometry ProviderModrinth { get; } = Geometry.Parse(SKGT.ProviderModrinth);
+    public static Geometry ProviderCurseForge { get; } = Geometry.Parse(SKGT.ProviderCurseForge);
+    public static Geometry ResourceMod { get; } = Geometry.Parse(SKGT.ResourceMod);
+    public static Geometry ResourceShaderPack { get; } = Geometry.Parse(SKGT.ResourceShaderPack);
+    public static Geometry ResourceModpack { get; } = Geometry.Parse(SKGT.ResourceModpack);
 }

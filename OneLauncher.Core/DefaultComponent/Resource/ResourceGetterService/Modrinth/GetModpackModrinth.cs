@@ -1,48 +1,57 @@
 using System.IO.Compression;
-using System.Text.Json;
-using OneLauncher.Core.DefaultComponent.Mod.ModService.Modrinth;
 using OneLauncher.Core.DefaultComponent.Resource.Pack;
 using OneLauncher.Core.Global;
+using OneLauncher.Core.Helper.Models;
 
 namespace OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.Modrinth;
 
+/// <summary>下载 Modrinth 整合包的最新 .mrpack 并解析清单，供预览与导入复用。</summary>
 internal static class GetModpackModrinth
 {
-    public static async Task<ModpackDownload> GetAsync(string projectId, CancellationToken cancellationToken)
+    /// <summary>
+    /// 获取整合包。返回值持有临时文件，调用方负责释放。
+    /// </summary>
+    /// <param name="projectId">Modrinth 项目 ID 或 slug。</param>
+    /// <param name="cancellationToken">取消元数据请求、下载及校验。</param>
+    /// <exception cref="OlanException">没有可安装版本、缺少 .mrpack 文件或清单无效。</exception>
+    internal static async Task<ModpackDownload> GetAsync(string projectId, CancellationToken cancellationToken = default)
     {
-        string url = $"https://api.modrinth.com/v2/project/{Uri.EscapeDataString(projectId)}/version";
-        using var response = await Init.Download.UnityClient.GetAsync(
-            url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using var metadata = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(metadata, cancellationToken: cancellationToken);
-        if (document.RootElement.ValueKind != JsonValueKind.Array || document.RootElement.GetArrayLength() == 0)
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        string url = ModrinthApiClient.BuildProjectVersionsUrl(projectId, gameVersion: null, loader: null);
+        var versions = await ModrinthApiClient.Shared.GetProjectVersionsAsync(
+            projectId, gameVersion: null, loader: null, cancellationToken);
+        if (versions.Count == 0)
             throw new OlanException("获取整合包失败", $"筛选 Modrinth 可安装整合包版本；参数 projectId={projectId}；请求URL url={url}。项目 {projectId} 没有可安装的整合包版本。");
 
-        var version = document.RootElement[0].Deserialize(ModrinthGetJsonContext.Default.ModrinthProjects);
-        var files = version?.Files?.Where(file =>
-            file.Filename?.EndsWith(".mrpack", StringComparison.OrdinalIgnoreCase) == true).ToList();
-        var file = files?.FirstOrDefault(file => file.Primary) ?? files?.FirstOrDefault();
+        var packFiles = (versions[0].Files ?? [])
+            .Where(file => file.Filename?.EndsWith(".mrpack", StringComparison.OrdinalIgnoreCase) == true)
+            .ToList();
+        var file = packFiles.FirstOrDefault(file => file.Primary) ?? packFiles.FirstOrDefault();
         if (file == null || !Uri.TryCreate(file.Url, UriKind.Absolute, out var downloadUri)
             || (downloadUri.Scheme != Uri.UriSchemeHttps && downloadUri.Scheme != Uri.UriSchemeHttp))
             throw new OlanException("获取整合包失败", $"选择整合包 .mrpack 下载文件；参数 projectId={projectId}；请求URL url={url}。项目 {projectId} 缺少有效的 .mrpack 下载文件。");
 
-        // 网络流先异步写入唯一临时文件，供 ZIP 随机读取和后续安装复用。
+        // 网络流先写入唯一临时文件，供 ZIP 随机读取和后续安装复用。
         string temporaryPath = Path.Combine(Path.GetTempPath(), $"olan-pack-{Guid.NewGuid():N}.mrpack");
         try
         {
-            using var packageResponse = await Init.Download.UnityClient.GetAsync(
-                downloadUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            packageResponse.EnsureSuccessStatusCode();
-            await using (var networkStream = await packageResponse.Content.ReadAsStreamAsync(cancellationToken))
-            await using (var destination = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write,
-                FileShare.None, 81920, FileOptions.Asynchronous))
+            using (var packageResponse = await Init.Download.UnityClient.GetAsync(
+                downloadUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            {
+                packageResponse.EnsureSuccessStatusCode();
+                await using var networkStream = await packageResponse.Content.ReadAsStreamAsync(cancellationToken);
+                await using var destination = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write,
+                    FileShare.None, 81920, FileOptions.Asynchronous);
                 await networkStream.CopyToAsync(destination, cancellationToken);
+            }
 
             cancellationToken.ThrowIfCancellationRequested();
             if (Init.ConfigManager.Data.OlanSettings.IsSha1Enabled && !string.IsNullOrWhiteSpace(file.Hashes?.Sha1))
                 await Init.Download.CheckAllSha1(
-                    [new(file.Url, temporaryPath, file.Size, file.Hashes.Sha1)], 1, cancellationToken);
+                    [new NdDowItem(file.Url!, temporaryPath, (int)Math.Clamp(file.Size, 0, int.MaxValue), file.Hashes.Sha1)],
+                    1, cancellationToken);
 
             using var archive = ZipFile.OpenRead(temporaryPath);
             var entry = archive.GetEntry("modrinth.index.json")

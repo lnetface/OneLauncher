@@ -1,5 +1,6 @@
 using Avalonia.Data.Converters;
 using OneLauncher.Core.DefaultComponent.Downloader.DownloadMinecraftProviders;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService;
 using OneLauncher.Core.Helper.Models;
 using System;
 using System.Globalization;
@@ -50,6 +51,11 @@ public sealed class UiOptionConverter : IValueConverter
         AccountType.Offline => ("IconUser", "离线账户", "只保存在本机，不进行在线验证"),
         AccountType.Msa => ("MicrosoftLogo", "微软账户", "使用 Microsoft 账户登录正版"),
         AccountType.Yggdrasil => ("IconKey", "外置登入", "使用 LittleSkin 等外置验证服务"),
+        ResourceSource.Modrinth => ("ProviderModrinth", "Modrinth", "开源资源平台"),
+        ResourceSource.CurseForge => ("ProviderCurseForge", "CurseForge", "需要配置 API Key"),
+        ResourceType.Mod => ("ResourceMod", "模组", "扩展游戏内容"),
+        ResourceType.ShaderPack => ("ResourceShaderPack", "光影包", "需要 Iris 或 OptiFine"),
+        ResourceType.Modpack => ("ResourceModpack", "整合包", "导入为新实例"),
         UserModel user => (Describe(user.UserType).IconKey, user.Name, Describe(user.UserType).Name),
         int java => ("JavaLogo", $"Java {java}", java is 8 or 11 or 17 or 21 or 25 ? "长期支持版本" : "非长期支持版本"),
         _ => (string.Empty, value?.ToString() ?? string.Empty, string.Empty)

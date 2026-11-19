@@ -173,4 +173,30 @@ internal partial class Download
         }
         return filesToDownload;
     }
+
+    /// <summary>
+    /// 由远端元数据生成下载项并做安全校验：地址必须是 http/https 绝对地址，
+    /// 文件名必须是单个文件名（防止写出目标目录）。
+    /// </summary>
+    /// <param name="url">远端下载地址。</param>
+    /// <param name="fileName">远端返回的文件名。</param>
+    /// <param name="directory">保存目录。</param>
+    /// <param name="size">文件大小（字节），超出 int 范围时截断。</param>
+    /// <param name="sha1">SHA1，可为空。</param>
+    /// <returns>校验不通过时返回 null，由调用方给出业务错误。</returns>
+    public static NdDowItem? CreateSafeItem(string? url, string? fileName, string directory, long size, string? sha1)
+    {
+        if (!IsSafeRemoteUrl(url))
+            return null;
+        if (string.IsNullOrWhiteSpace(fileName) || fileName is "." or ".."
+            || Path.IsPathRooted(fileName) || fileName.Contains('/') || fileName.Contains('\\')
+            || fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            return null;
+        return new NdDowItem(url!, Path.Combine(directory, fileName), (int)Math.Clamp(size, 0, int.MaxValue), sha1);
+    }
+
+    /// <summary>远端地址是否为 http/https 绝对地址；<paramref name="httpsOnly"/> 为 true 时只接受 https。</summary>
+    internal static bool IsSafeRemoteUrl(string? url, bool httpsOnly = false)
+        => Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttps || (!httpsOnly && uri.Scheme == Uri.UriSchemeHttp));
 }

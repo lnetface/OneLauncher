@@ -12,7 +12,7 @@ namespace OneLauncher.Views.Controls;
 
 /// <summary>
 /// 统一显示界面图标：普通键读取 Theme.axaml 中随主题切换的位图，
-/// JavaLogo/MicrosoftLogo 读取 SKGT 矢量并使用当前前景色绘制，avares 地址用于固定彩色图片。
+/// JavaLogo、MicrosoftLogo 及资源检索图标读取 SKGT 矢量并使用当前前景色绘制，avares 地址用于固定彩色图片。
 /// </summary>
 public sealed class ThemeIcon : Control
 {
@@ -82,6 +82,11 @@ public sealed class ThemeIcon : Control
     {
         JavaLogoKey => VectorIcons.JavaLogo,
         MicrosoftLogoKey => VectorIcons.MicrosoftLogo,
+        nameof(VectorIcons.ProviderModrinth) => VectorIcons.ProviderModrinth,
+        nameof(VectorIcons.ProviderCurseForge) => VectorIcons.ProviderCurseForge,
+        nameof(VectorIcons.ResourceMod) => VectorIcons.ResourceMod,
+        nameof(VectorIcons.ResourceShaderPack) => VectorIcons.ResourceShaderPack,
+        nameof(VectorIcons.ResourceModpack) => VectorIcons.ResourceModpack,
         _ => null
     };
 

@@ -16,13 +16,17 @@ internal class ResourceManifest
     // 结构未定，先按任意 JSON 接收，避免以后改成对象时旧版本解析失败
     public JsonElement? Announcement { get; set; }
     public ManifestResources? Resources { get; set; }
+    public ApiKeyResouces? ApiKeys { get; set; }
     public ManifestFunction? Function { get; set; }
     // 推荐模组的 Modrinth 项目 ID
     public List<string>? RecommendedMods { get; set; }
     // Java 安装面板中可选择下载的 Java 版本
     public List<int>? JavaVersions { get; set; }
 }
-
+internal class ApiKeyResouces
+{
+    public string? CurseForgeApiKey { get; set; }
+}
 // 每项为按顺序尝试的候选地址；null 或空列表表示忽略
 internal class ManifestResources
 {

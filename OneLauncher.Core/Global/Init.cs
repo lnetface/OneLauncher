@@ -15,6 +15,7 @@ public static partial class Init
     public const string ApplicationID = "53740b20-7f24-46a3-82cc-ea0376b9f5b5";
     public const string PackageName = "com.onelauncher.lnetface";
     public const string ProjectWebsite = "https://github.com/lnetface/OneLauncher";
+    public static string? CurseforgeApiKey { get; set; }
     public static Task<IServiceCollection> InitTask;
     //public static IServiceCollection Service { get; private set; }
     public static string BasePath { get; private set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneLauncher");

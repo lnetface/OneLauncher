@@ -55,7 +55,7 @@ public class AutoUpdate
             var javaVersions = manifest.JavaVersions?.Where(version => version > 0).Distinct().ToList();
             if (javaVersions is { Count: > 0 })
                 settings.AvailableJavaVersions = javaVersions;
-
+            Init.CurseforgeApiKey = manifest.ApiKeys?.CurseForgeApiKey;
             await Init.ConfigManager.Save();
         }
         catch (Exception ex)

@@ -16,7 +16,8 @@ using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
-using OneLauncher.Core.DefaultComponent.Resource.ModService.Modrinth;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.Modrinth;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Global.ModelDataMangers;
 using OneLauncher.Core.Helper.Models;
@@ -98,8 +99,7 @@ internal static class ModpackUiChecks
         using var download = (IDisposable)Activator.CreateInstance(downloadType, client)!;
         typeof(Init).GetProperty("Download", BindingFlags.NonPublic | BindingFlags.Static)!.SetValue(null, download);
 
-        var search = new SearchModrinth();
-        await search.ToSearch("整合包 & ?", ResourceType.Modpack);
+        await SearchModrinth.SearchAsync("整合包 & ?", ResourceType.Modpack);
         string query = Uri.UnescapeDataString(handler.Requests[^1].Query);
         Assert(query.Contains("project_type:modpack") && !query.Contains("categories:"), "pack search ignores mod loader filters");
         Assert(handler.Requests[^1].Query.Contains("%26"), "pack keyword encoded");

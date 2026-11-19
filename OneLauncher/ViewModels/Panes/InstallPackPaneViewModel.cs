@@ -110,7 +110,7 @@ internal sealed partial class InstallPackPaneViewModel : BaseViewModel, IPaneHos
         CurrentText = "正在获取整合包信息...";
         try
         {
-            var package = await _unitedCore.ResourceInstallerService.GetModpackInfoAsync(_resource.ID, cancellation.Token);
+            var package = await _unitedCore.ResourceInstallerService.GetModpackInfoAsync(_resource.ID, _resource.Source, cancellation.Token);
             if (_closed || cancellation.IsCancellationRequested)
             {
                 package.Dispose();

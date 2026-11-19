@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using OneLauncher.ViewModel.Page;
 using OneLauncher.ViewModel.PaneViewModels.Factories;
 using OneLauncher.Interfaces;
+using System.Net.Http.Headers;
 
 namespace OneLauncher.Views.ViewModels;
 //internal class GameDataPageDisplayListRefreshMessage { }
@@ -136,6 +137,7 @@ internal partial class GameDataPageViewModel : BaseViewModel,IPageHost,IListTemp
     private readonly UnitedCore _unitedCore;
     private readonly EditGameDataPaneViewModelFactory _editVMFactory;
     private readonly NewGameDataPaneViewModelFactory _newGameDataPaneViewModelFactory;
+    private readonly Dictionary<string, GameDataModsManagerPaneViewModel> _preloadGDMMVM = new();
     private bool _isRefreshingTags;
     [ObservableProperty] private ObservableCollection<GameDataItem> items = new();
     [ObservableProperty] public string type;
@@ -239,7 +241,16 @@ internal partial class GameDataPageViewModel : BaseViewModel,IPageHost,IListTemp
         else
 #endif
         {
-            _ = RefList();
+            _ = RefList().ContinueWith(task =>
+            {
+                foreach(var item in Items)
+                {
+                    if (!_preloadGDMMVM.ContainsKey(item.data.InstanceId))
+                    {
+                        _preloadGDMMVM[item.data.InstanceId] = new GameDataModsManagerPaneViewModel(item.data, () => IsPaneShow = false);
+                    }
+                }
+            });
             _gameDataManager.OnDataChanged += OnGameDataChanged;
             WeakReferenceMessenger.Default.Register<GameDataPageViewModel, IdentifierVisibilityChangedMessage>(
                 this, static (recipient, _) => Dispatcher.UIThread.Post(
@@ -257,7 +268,7 @@ internal partial class GameDataPageViewModel : BaseViewModel,IPageHost,IListTemp
     {
         IsPaneShow = true;
         PaneContent = new GameDataModsManagerPane()
-        { DataContext = new GameDataModsManagerPaneViewModel(data,() => IsPaneShow = false) };
+        { DataContext = _preloadGDMMVM[data.InstanceId] };
     }
     [RelayCommand]
     public void NewGameData()

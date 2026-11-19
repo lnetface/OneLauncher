@@ -113,12 +113,12 @@ internal partial class ServerPageViewModel : BaseViewModel,IPageHost,IListTempla
         _addServerPaneViewModelFactory = addServerPaneViewModelFactory;
         _editServerPaneViewModelFactory = editServerPaneViewModelFactory;
         _editGameDataPaneViewModelFactory = editGameDataPaneViewModelFactory;
-        _ = RefList();
+        _ = RefList().ConfigureAwait(false);
         _dbManager.OnDataChanged += OnServerDataChanged;
         WeakReferenceMessenger.Default.Register<ServerPageViewModel, IdentifierVisibilityChangedMessage>(
             this, static (recipient, _) => Dispatcher.UIThread.Post(
                 () => recipient.OnPropertyChanged(nameof(ShowIdentifiers))));
-        _ = ProbePingsAsync();
+        _ = ProbePingsAsync().ConfigureAwait(false);
     }
     #region
     public async Task RefList()
@@ -170,11 +170,11 @@ internal partial class ServerPageViewModel : BaseViewModel,IPageHost,IListTempla
     }
 
     private void RefreshPing(Guid serverId)
-    #endregion
+    
     {
         _ = RefreshPingAsync(serverId);
     }
-
+    #endregion
     private async Task RefreshPingAsync(Guid serverId)
     {
         ServerEntry? serverEntry = _dbManager.Data.ServerList

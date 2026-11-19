@@ -5,7 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using OneLauncher.Codes;
-using OneLauncher.Core.DefaultComponent.Resource.ModService.Modrinth;
+using OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Global.ModelDataMangers;
 using OneLauncher.Core.Helper.Models;
@@ -180,11 +180,13 @@ internal partial class InstallModPaneViewModel : BaseViewModel, IPaneHost
                     progress, _resource.ID, instance, instance.ModLoader,
                     includeDependencies: IsICS,
                     verifySha1: _configManager.Data.OlanSettings.IsSha1Enabled,
+                    source: _resource.Source,
                     cancellationToken: task.Token!.Token);
             else
                 await _unitedCore.ResourceInstallerService.InstallShaderPack(
                     progress, _resource.ID, instance,
                     verifySha1: _configManager.Data.OlanSettings.IsSha1Enabled,
+                    source: _resource.Source,
                     cancellationToken: task.Token!.Token);
 
             task.Token!.Token.ThrowIfCancellationRequested();

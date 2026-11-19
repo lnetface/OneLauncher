@@ -1,54 +1,44 @@
-using System.Text.Json;
-using OneLauncher.Core.DefaultComponent.Mod.ModService.Modrinth;
+using OneLauncher.Core.DefaultComponent.Downloader;
 using OneLauncher.Core.Global;
 using OneLauncher.Core.Helper.Models;
 
 namespace OneLauncher.Core.DefaultComponent.Resource.ResourceGetterService.Modrinth;
 
+/// <summary>解析 Modrinth 光影包在指定 Minecraft 版本下的最新文件。</summary>
 internal static class GetShaderPackModrinth
 {
-    public static async Task<NdDowItem> GetDownloadInfoAsync(
+    /// <summary>
+    /// 获取光影包下载信息。只按 Minecraft 版本筛选，不以实例的加载器或已安装依赖限制光影包，
+    /// 依赖字段（如 Iris）只作为元数据，不发起请求。
+    /// </summary>
+    /// <param name="projectId">Modrinth 项目 ID 或 slug。</param>
+    /// <param name="gameVersion">Minecraft 版本。</param>
+    /// <param name="shaderPackPath">文件保存目录（通常为实例的 shaderpacks）。</param>
+    /// <param name="cancellationToken">取消元数据请求。</param>
+    /// <exception cref="OlanException">没有兼容版本或下载文件信息无效。</exception>
+    internal static async Task<NdDowItem> GetDownloadInfoAsync(
         string projectId,
-        string versionId,
+        string gameVersion,
         string shaderPackPath,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(versionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(gameVersion);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        // 只按 Minecraft 版本筛选，不以实例的 Mod 加载器或已安装依赖限制光影包。
-        string gameVersions = Uri.EscapeDataString(JsonSerializer.Serialize(
-            new[] { versionId }, ModrinthGetJsonContext.Default.StringArray));
-        string url = $"https://api.modrinth.com/v2/project/{Uri.EscapeDataString(projectId)}/version?game_versions={gameVersions}";
-        using var response = await Init.Download.UnityClient.GetAsync(
-            url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        string url = ModrinthApiClient.BuildProjectVersionsUrl(projectId, gameVersion, loader: null);
+        string context = $"参数 projectId={projectId}；参数 gameVersion={gameVersion}；文件/目录 shaderPackPath={shaderPackPath}；请求URL url={url}";
+        var versions = await ModrinthApiClient.Shared.GetProjectVersionsAsync(
+            projectId, gameVersion, loader: null, cancellationToken);
+        if (versions.Count == 0)
+            throw new OlanException("安装光影包失败", $"筛选匹配 Minecraft 的光影版本；{context}。项目 {projectId} 没有适配 Minecraft {gameVersion} 的光影包版本。");
 
-        if (document.RootElement.ValueKind != JsonValueKind.Array)
-            throw new OlanException("安装光影包失败", $"解析 Modrinth 光影版本列表；参数 projectId={projectId}；参数 versionId={versionId}；文件/目录 shaderPackPath={shaderPackPath}；请求URL url={url}。项目 {projectId} 返回了无效的版本列表。");
-        if (document.RootElement.GetArrayLength() == 0)
-            throw new OlanException("安装光影包失败", $"筛选匹配 Minecraft 的光影版本；参数 projectId={projectId}；参数 versionId={versionId}；文件/目录 shaderPackPath={shaderPackPath}；请求URL url={url}。项目 {projectId} 没有适配 Minecraft {versionId} 的光影包版本。");
-
-        // Modrinth 版本列表按发布时间从新到旧返回；依赖字段只读取为元数据，不发起依赖请求。
-        var version = document.RootElement[0].Deserialize(ModrinthGetJsonContext.Default.ModrinthProjects);
-        var file = version?.Files?.FirstOrDefault(item => item.Primary) ?? version?.Files?.FirstOrDefault();
-        if (file == null || !Uri.TryCreate(file.Url, UriKind.Absolute, out var downloadUri)
-            || (downloadUri.Scheme != Uri.UriSchemeHttps && downloadUri.Scheme != Uri.UriSchemeHttp))
-        {
-            throw new OlanException("安装光影包失败", $"选择光影版本的有效下载文件；参数 projectId={projectId}；参数 versionId={versionId}；文件/目录 shaderPackPath={shaderPackPath}；请求URL url={url}。项目 {projectId} 的版本缺少有效的下载文件。");
-        }
-
-        // 远端文件名只能是单个文件，防止写出 shaderpacks 目录。
-        string filename = file.Filename;
-        if (string.IsNullOrWhiteSpace(filename) || filename is "." or ".."
-            || Path.IsPathRooted(filename) || filename.Contains('/') || filename.Contains('\\')
-            || filename.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
-        {
-            throw new OlanException("安装光影包失败", $"校验光影下载文件名的目录边界；参数 projectId={projectId}；参数 versionId={versionId}；文件/目录 shaderPackPath={shaderPackPath}；请求URL url={url}；文件/目录 filename={filename}。项目 {projectId} 返回了无效的文件名。");
-        }
+        // Modrinth 版本列表按发布时间从新到旧返回；文件名限定为单个文件，防止写出 shaderpacks 目录。
+        var file = versions[0].GetPrimaryFile();
+        var item = Download.CreateSafeItem(file?.Url, file?.Filename, shaderPackPath, file?.Size ?? 0, file?.Hashes?.Sha1)
+            ?? throw new OlanException("安装光影包失败", $"选择光影版本的有效下载文件；{context}；文件/目录 filename={file?.Filename}。项目 {projectId} 的版本缺少有效的下载地址或文件名。");
 
         cancellationToken.ThrowIfCancellationRequested();
-        return new NdDowItem(file.Url, Path.Combine(shaderPackPath, filename), file.Size, file.Hashes?.Sha1);
+        return item;
     }
 }

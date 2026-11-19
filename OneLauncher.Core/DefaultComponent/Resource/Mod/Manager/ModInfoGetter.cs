@@ -1,5 +1,5 @@
-﻿using OneLauncher.Core.Helper.Models;
-using OneLauncher.Core.Global;
+﻿using OneLauncher.Core.Global;
+using OneLauncher.Core.Helper.Models;
 using System;
 using System.Collections.Generic;
 using System.IO.Compression;
@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static OneLauncher.Core.Helper.ImportPCL2Version.PclVersionInspector;
 
 namespace OneLauncher.Core.DefaultComponent.Resource.Mod.Manager;
 
@@ -24,15 +25,27 @@ public class ModInfoGetter
             ZipArchiveEntry? fabricConfig = archive.GetEntry("fabric.mod.json");
             if (fabricConfig != null)
             {
-                return await new FabricModInfoHelper().GetModInfoAsync(filePath, archive, fabricConfig);
+                var result =  await new FabricModInfoHelper()
+                    .GetModInfoAsync(filePath, archive, fabricConfig);
+                result.mod = ModEnum.fabric;
+                return result;
             }
 
             // 2. 尝试作为 NeoForge/Forge 模组处理
-            ZipArchiveEntry? forgeConfig = archive.GetEntry("META-INF/neoforge.mods.toml")
-                                        ?? archive.GetEntry("META-INF/mods.toml");
+            ZipArchiveEntry? neoforgeConfig = archive.GetEntry("META-INF/neoforge.mods.toml");
+            ZipArchiveEntry? forgeConfig = archive.GetEntry("META-INF/mods.toml");
+                                       
+            if(neoforgeConfig != null)
+            {
+                var result = await new ForgeSeriesModInfoHelper().GetModInfoAsync(filePath, archive, neoforgeConfig);
+                result.mod = ModEnum.neoforge;
+                return result;
+            }
             if (forgeConfig != null)
             {
-                return await new ForgeSeriesModInfoHelper().GetModInfoAsync(filePath, archive, forgeConfig);
+                var result = await new ForgeSeriesModInfoHelper().GetModInfoAsync(filePath, archive, forgeConfig);
+                result.mod = ModEnum.forge;
+                return result;
             }
 
             return null;
